@@ -1,0 +1,115 @@
+{
+  "constraints": null,
+  "description": "Extract key entities from text and summarize them",
+  "edges": [
+    {
+      "condition": null,
+      "source": "extract_key_entities_text_summarize_them",
+      "target": "synthesize"
+    }
+  ],
+  "inputs": [
+    {
+      "data_type": "string",
+      "default": null,
+      "description": "Primary user question or request.",
+      "id": "query",
+      "name": "query",
+      "required": false
+    }
+  ],
+  "metadata": {
+    "approved_plan": "1. Parse requirements and lock the current task description in shared memory.\n2. Split the task into independent subtasks for tool construction.\n3. Build one tool function per subtask via tool-builder agents.\n4. Verify each tool in a venv with execution-based integrity checks.\n5. Iterate tool fixes until verifier passes or fallback tool is selected.\n6. Assemble a LangGraph workflow that runs subtasks and synthesizes results.\n7. Emit workflow folder with workflow.py, tools.py, README.md, and memory snapshot.\n8. Validate generated code and return user run instructions.",
+    "architecture_mode": "subtask_tool_arsenal",
+    "cost_estimate": {
+      "estimated_input_tokens": 50,
+      "estimated_output_tokens": 1024,
+      "estimated_total_usd": 0.01551,
+      "llm_steps": 1
+    },
+    "current_task_description": "User Requirements:\nExtract key entities from text and summarize them\n\nApproved Plan:\n1. Parse requirements and lock the current task description in shared memory.\n2. Split the task into independent subtasks for tool construction.\n3. Build one tool function per subtask via tool-builder agents.\n4. Verify each tool in a venv with execution-based integrity checks.\n5. Iterate tool fixes until verifier passes or fallback tool is selected.\n6. Assemble a LangGraph workflow that runs subtasks and synthesizes results.\n7. Emit workflow folder with workflow.py, tools.py, README.md, and memory snapshot.\n8. Validate generated code and return user run instructions.\n\nIntent Summary:\nBuild a general-purpose workflow generator from natural language requirements. User context: Extract key entities from text and summarize them Execution path: 1. Parse requirements and lock the current task description in shared memory. 2. Split the task into independent subtasks for tool construction. 3. Build one tool function per subtask via tool-builder agents. 4. Verify each tool in a venv with execution-based integrity checks. 5. Iterate tool fix...\n",
+    "dependency": {
+      "roots": [
+        "extract_key_entities_text_summarize_them"
+      ],
+      "sinks": [
+        "synthesize"
+      ],
+      "topological_order": [
+        "extract_key_entities_text_summarize_them",
+        "synthesize"
+      ]
+    },
+    "intent_summary": "Build a general-purpose workflow generator from natural language requirements. User context: Extract key entities from text and summarize them Execution path: 1. Parse requirements and lock the current task description in shared memory. 2. Split the task into independent subtasks for tool construction. 3. Build one tool function per subtask via tool-builder agents. 4. Verify each tool in a venv with execution-based integrity checks. 5. Iterate tool fix...",
+    "optimization_trace": [
+      "validate",
+      "normalize",
+      "dependency_resolve",
+      "dead_step_elimination",
+      "merge_compatible_steps",
+      "parallelization",
+      "retry_policy_injection",
+      "cost_estimation"
+    ],
+    "subtasks": [
+      {
+        "description": "Extract key entities from text and summarize them",
+        "id": "extract_key_entities_text_summarize_them",
+        "name": "Extract key entities from text",
+        "tool_name": "tool_extract_key_entities_text_summarize_them"
+      }
+    ],
+    "synthesis_prompt": "You are the synthesis head. Combine independent subtask outputs into one clear, direct plain-text answer for the user. Keep the answer coherent with the approved plan and user intent. Avoid JSON output.",
+    "tool_functions": {
+      "tool_extract_key_entities_text_summarize_them": {
+        "code": "from typing import Any, Dict\n\ndef tool_extract_key_entities_text_summarize_them(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    text = str(task_input.get(\"doc\") or task_input.get(\"text\") or task_input.get(\"query\") or \"\")\n    cleaned = \" \".join(text.split())\n    summary = cleaned[:500]\n    return {\n        \"tool\": \"tool_extract_key_entities_text_summarize_them\",\n        \"status\": \"ok\",\n        \"result\": summary,\n    }\n",
+        "description": "Extract key entities from text and summarize them"
+      }
+    }
+  },
+  "name": "smoke_progress2",
+  "outputs": [
+    {
+      "data_type": "string",
+      "description": "Final plain-text answer.",
+      "id": "final_answer",
+      "name": "final_answer",
+      "source_step": "synthesize"
+    }
+  ],
+  "steps": [
+    {
+      "config": {
+        "subtask_description": "Extract key entities from text and summarize them",
+        "tool_name": "tool_extract_key_entities_text_summarize_them"
+      },
+      "id": "extract_key_entities_text_summarize_them",
+      "retry_policy": {
+        "backoff_strategy": "exponential",
+        "initial_delay_seconds": 1.0,
+        "max_delay_seconds": 30.0,
+        "max_retries": 2
+      },
+      "timeout_seconds": 120,
+      "type": "tool"
+    },
+    {
+      "config": {
+        "max_output_tokens": 1024,
+        "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+        "prompt": "You are the synthesis head. Combine independent subtask outputs into one clear, direct plain-text answer for the user. Keep the answer coherent with the approved plan and user intent. Avoid JSON output.",
+        "temperature": 0
+      },
+      "id": "synthesize",
+      "retry_policy": {
+        "backoff_strategy": "exponential",
+        "initial_delay_seconds": 1.0,
+        "max_delay_seconds": 30.0,
+        "max_retries": 2
+      },
+      "timeout_seconds": 120,
+      "type": "llm"
+    }
+  ],
+  "version": "1.0.0"
+}

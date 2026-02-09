@@ -39,6 +39,15 @@ python3 -m dwc.main \
   --workflow-name code_extractor
 ```
 
+To stream agent progress checks during compile:
+
+```bash
+python3 -m dwc.main --requirements "..." --todo-stream
+```
+
+The persisted checklist is written to:
+- `.dwc/memory_md/agents/todo_board.md`
+
 ## Generated Workflow Run
 
 For general workflows:
@@ -54,4 +63,3 @@ python .dwc/workflows/<workflow_name>/<version>/workflow.py --doc ./doc.txt
 ```
 
 Output is plain text in terminal (not JSON).
-

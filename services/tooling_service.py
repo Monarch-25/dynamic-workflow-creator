@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from dwc.agents.subtask_agent import SubtaskAgent, SubtaskSpec
 from dwc.agents.tool_builder_agent import ToolBuilderAgent, ToolCandidate
 from dwc.agents.tool_verifier_agent import ToolVerificationResult, ToolVerifierAgent
+from dwc.memory.agent_todo_board import AgentTodoBoard
 from dwc.memory.history_store import HistoryStore
 from dwc.memory.markdown_memory import MarkdownMemoryStore
 from dwc.memory.shared_tool_registry import SharedToolRegistry
@@ -47,6 +48,7 @@ class ToolingService:
         memory_store: MarkdownMemoryStore,
         history_store: HistoryStore,
         shared_tool_registry: Optional[SharedToolRegistry] = None,
+        todo_board: Optional[AgentTodoBoard] = None,
     ) -> None:
         self.subtask_agent = subtask_agent
         self.tool_builder = tool_builder
@@ -54,6 +56,7 @@ class ToolingService:
         self.memory_store = memory_store
         self.history_store = history_store
         self.shared_tool_registry = shared_tool_registry or SharedToolRegistry()
+        self.todo_board = todo_board
 
     def build_verified_tools(
         self,
@@ -65,15 +68,39 @@ class ToolingService:
         max_subtasks: int = 8,
         max_tool_iterations: int = 4,
     ) -> ToolingStageResult:
+        if self.todo_board is not None:
+            self.todo_board.start(
+                "subtask_agent",
+                "split_subtasks",
+                "Splitting requirements into executable subtasks.",
+            )
         subtasks = self.subtask_agent.split(
             requirements_text,
             approved_plan=approved_plan,
             max_subtasks=max_subtasks,
         )
+        if self.todo_board is not None:
+            self.todo_board.complete(
+                "subtask_agent",
+                "split_subtasks",
+                f"Created {len(subtasks)} subtask(s).",
+            )
+            self.todo_board.start(
+                "tool_builder_agent",
+                "build_tools",
+                f"Building candidate tools for {len(subtasks)} subtask(s).",
+            )
+            self.todo_board.start(
+                "tool_verifier_agent",
+                "verify_tools",
+                "Verifying tool contract and semantics.",
+            )
         self.memory_store.append_agent_working_memory(
             "subtask_agent",
             "Created subtasks:\n"
-            + "\n".join(f"- {subtask.id}: {subtask.description}" for subtask in subtasks),
+            + "\n".join(
+                f"- {subtask.id}: {subtask.description}" for subtask in subtasks
+            ),
         )
 
         tool_records: List[ToolBuildRecord] = []
@@ -81,6 +108,12 @@ class ToolingService:
         subtask_rows: List[Dict[str, str]] = []
 
         for subtask in subtasks:
+            if self.todo_board is not None:
+                self.todo_board.add_check(
+                    "tool_builder_agent",
+                    "build_tools",
+                    f"Subtask `{subtask.id}`: {subtask.description[:120]}",
+                )
             shared_suggestion = self._suggest_shared_tool(subtask.description)
             guidance = self._build_prior_failure_guidance(subtask.description)
             shared_guidance = self._build_shared_tool_guidance(shared_suggestion)
@@ -97,6 +130,7 @@ class ToolingService:
             chosen_candidate = None
             chosen_verification = ToolVerificationResult(success=False, errors="Not run")
             attempts = 0
+            seen_code_hashes: set[str] = set()
 
             registry_candidate = self._candidate_from_shared_suggestion(
                 subtask=subtask,
@@ -104,6 +138,16 @@ class ToolingService:
             )
             if registry_candidate is not None:
                 attempts += 1
+                candidate_hash = hashlib.sha256(
+                    registry_candidate.code.encode("utf-8")
+                ).hexdigest()
+                seen_code_hashes.add(candidate_hash)
+                if self.todo_board is not None:
+                    self.todo_board.add_check(
+                        "tool_builder_agent",
+                        "build_tools",
+                        f"{subtask.id} attempt {attempts}: reused shared registry candidate.",
+                    )
                 verification = self.tool_verifier.verify(registry_candidate)
                 self._record_attempt(
                     workflow_name=workflow_name,
@@ -117,6 +161,15 @@ class ToolingService:
                     feedback_used="shared_registry_candidate",
                     contributor="subtask_agent+tool_verifier_agent:shared_registry",
                 )
+                if self.todo_board is not None:
+                    self.todo_board.add_check(
+                        "tool_verifier_agent",
+                        "verify_tools",
+                        (
+                            f"{registry_candidate.name} (shared_registry) "
+                            f"success={verification.success}"
+                        ),
+                    )
                 self.memory_store.append_agent_working_memory(
                     "tool_verifier_agent",
                     (
@@ -142,6 +195,47 @@ class ToolingService:
                     shared_task_description=current_task_description,
                     feedback=feedback,
                 )
+                candidate_hash = hashlib.sha256(candidate.code.encode("utf-8")).hexdigest()
+                if self.todo_board is not None:
+                    self.todo_board.add_check(
+                        "tool_builder_agent",
+                        "build_tools",
+                        (
+                            f"{subtask.id} attempt {attempts}: "
+                            f"candidate `{candidate.name}` origin={candidate.origin}."
+                        ),
+                    )
+                if candidate_hash in seen_code_hashes:
+                    repeat_error = (
+                        "Repeated identical tool candidate code. "
+                        "Stopping retry loop early to avoid redundant failures."
+                    )
+                    verification = ToolVerificationResult(success=False, errors=repeat_error)
+                    self._record_attempt(
+                        workflow_name=workflow_name,
+                        subtask=subtask,
+                        candidate_name=candidate.name,
+                        candidate_origin=candidate.origin,
+                        candidate_code=candidate.code,
+                        candidate_sample_input=candidate.sample_input,
+                        attempt=attempts,
+                        verification=verification,
+                        feedback_used=feedback,
+                        contributor=(
+                            "subtask_agent+tool_builder_agent+tool_verifier_agent:"
+                            f"{candidate.origin}"
+                        ),
+                    )
+                    if self.todo_board is not None:
+                        self.todo_board.add_check(
+                            "tool_verifier_agent",
+                            "verify_tools",
+                            f"{candidate.name} skipped verifier: repeated code hash.",
+                        )
+                    chosen_candidate = candidate
+                    chosen_verification = verification
+                    break
+                seen_code_hashes.add(candidate_hash)
                 self.memory_store.append_agent_working_memory(
                     "tool_builder_agent",
                     (
@@ -152,6 +246,12 @@ class ToolingService:
                 )
 
                 verification = self.tool_verifier.verify(candidate)
+                if self.todo_board is not None:
+                    self.todo_board.add_check(
+                        "tool_verifier_agent",
+                        "verify_tools",
+                        f"{candidate.name} verification success={verification.success}.",
+                    )
                 self._record_attempt(
                     workflow_name=workflow_name,
                     subtask=subtask,
@@ -191,6 +291,20 @@ class ToolingService:
                 chosen_candidate = self.tool_builder.build_fallback_tool(subtask=subtask)
                 chosen_verification = self.tool_verifier.verify(chosen_candidate)
                 attempts += 1
+                if self.todo_board is not None:
+                    self.todo_board.add_check(
+                        "tool_builder_agent",
+                        "build_tools",
+                        f"{subtask.id}: using fallback tool `{chosen_candidate.name}`.",
+                    )
+                    self.todo_board.add_check(
+                        "tool_verifier_agent",
+                        "verify_tools",
+                        (
+                            f"{chosen_candidate.name} (fallback) "
+                            f"success={chosen_verification.success}"
+                        ),
+                    )
                 self._record_attempt(
                     workflow_name=workflow_name,
                     subtask=subtask,
@@ -208,6 +322,20 @@ class ToolingService:
                 fallback = self.tool_builder.build_fallback_tool(subtask=subtask)
                 fallback_verification = self.tool_verifier.verify(fallback)
                 attempts += 1
+                if self.todo_board is not None:
+                    self.todo_board.add_check(
+                        "tool_builder_agent",
+                        "build_tools",
+                        f"{subtask.id}: retrying fallback tool `{fallback.name}`.",
+                    )
+                    self.todo_board.add_check(
+                        "tool_verifier_agent",
+                        "verify_tools",
+                        (
+                            f"{fallback.name} (fallback retry) "
+                            f"success={fallback_verification.success}"
+                        ),
+                    )
                 self._record_attempt(
                     workflow_name=workflow_name,
                     subtask=subtask,
@@ -223,6 +351,19 @@ class ToolingService:
                 if fallback_verification.success:
                     chosen_candidate = fallback
                     chosen_verification = fallback_verification
+            if self.todo_board is not None:
+                if chosen_verification.success:
+                    self.todo_board.add_check(
+                        "tool_builder_agent",
+                        "build_tools",
+                        f"{subtask.id}: selected `{chosen_candidate.name}` in {attempts} attempt(s).",
+                    )
+                else:
+                    self.todo_board.add_check(
+                        "tool_builder_agent",
+                        "build_tools",
+                        f"{subtask.id}: unresolved after {attempts} attempt(s), using last candidate.",
+                    )
 
             tool_functions[chosen_candidate.name] = {
                 "description": chosen_candidate.description,
@@ -231,6 +372,7 @@ class ToolingService:
             subtask_rows.append(
                 {
                     "id": subtask.id,
+                    "name": subtask.name,
                     "description": subtask.description,
                     "tool_name": chosen_candidate.name,
                 }
@@ -247,6 +389,34 @@ class ToolingService:
                     preview=chosen_verification.output_preview or "",
                 )
             )
+
+        if self.todo_board is not None:
+            verified_count = sum(1 for row in tool_records if row.verified)
+            status_message = (
+                f"Selected {len(tool_records)} tool(s); {verified_count} passed verifier."
+            )
+            if verified_count == len(tool_records):
+                self.todo_board.complete(
+                    "tool_builder_agent",
+                    "build_tools",
+                    status_message,
+                )
+                self.todo_board.complete(
+                    "tool_verifier_agent",
+                    "verify_tools",
+                    f"All verifier checks passed ({verified_count}/{len(tool_records)}).",
+                )
+            else:
+                self.todo_board.fail(
+                    "tool_builder_agent",
+                    "build_tools",
+                    status_message,
+                )
+                self.todo_board.fail(
+                    "tool_verifier_agent",
+                    "verify_tools",
+                    f"Verifier shortfall: {verified_count}/{len(tool_records)} passed.",
+                )
 
         return ToolingStageResult(
             subtasks=subtasks,
@@ -390,6 +560,7 @@ class ToolingService:
             sanitized = "task"
         if sanitized[0].isdigit():
             sanitized = f"task_{sanitized}"
+        sanitized = sanitized[:48].rstrip("_") or "task"
         return f"tool_{sanitized}"
 
     def _record_attempt(

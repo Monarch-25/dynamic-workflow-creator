@@ -1,0 +1,115 @@
+{
+  "constraints": null,
+  "description": "Return current time in ISO format",
+  "edges": [
+    {
+      "condition": null,
+      "source": "return_current_time_iso_format",
+      "target": "synthesize"
+    }
+  ],
+  "inputs": [
+    {
+      "data_type": "string",
+      "default": null,
+      "description": "Primary user question or request.",
+      "id": "query",
+      "name": "query",
+      "required": false
+    }
+  ],
+  "metadata": {
+    "approved_plan": "1. Parse requirements and lock the current task description in shared memory.\n2. Split the task into independent subtasks for tool construction.\n3. Build one tool function per subtask via tool-builder agents.\n4. Verify each tool in a venv with execution-based integrity checks.\n5. Iterate tool fixes until verifier passes or fallback tool is selected.\n6. Assemble a LangGraph workflow that runs subtasks and synthesizes results.\n7. Emit workflow folder with workflow.py, tools.py, README.md, and memory snapshot.\n8. Validate generated code and return user run instructions.",
+    "architecture_mode": "subtask_tool_arsenal",
+    "cost_estimate": {
+      "estimated_input_tokens": 50,
+      "estimated_output_tokens": 1024,
+      "estimated_total_usd": 0.01551,
+      "llm_steps": 1
+    },
+    "current_task_description": "User Requirements:\nReturn current time in ISO format\n\nApproved Plan:\n1. Parse requirements and lock the current task description in shared memory.\n2. Split the task into independent subtasks for tool construction.\n3. Build one tool function per subtask via tool-builder agents.\n4. Verify each tool in a venv with execution-based integrity checks.\n5. Iterate tool fixes until verifier passes or fallback tool is selected.\n6. Assemble a LangGraph workflow that runs subtasks and synthesizes results.\n7. Emit workflow folder with workflow.py, tools.py, README.md, and memory snapshot.\n8. Validate generated code and return user run instructions.\n\nIntent Summary:\nBuild a general-purpose workflow generator from natural language requirements. User context: Return current time in ISO format Execution path: 1. Parse requirements and lock the current task description in shared memory. 2. Split the task into independent subtasks for tool construction. 3. Build one tool function per subtask via tool-builder agents. 4. Verify each tool in a venv with execution-based integrity checks. 5. Iterate tool fix...\n",
+    "dependency": {
+      "roots": [
+        "return_current_time_iso_format"
+      ],
+      "sinks": [
+        "synthesize"
+      ],
+      "topological_order": [
+        "return_current_time_iso_format",
+        "synthesize"
+      ]
+    },
+    "intent_summary": "Build a general-purpose workflow generator from natural language requirements. User context: Return current time in ISO format Execution path: 1. Parse requirements and lock the current task description in shared memory. 2. Split the task into independent subtasks for tool construction. 3. Build one tool function per subtask via tool-builder agents. 4. Verify each tool in a venv with execution-based integrity checks. 5. Iterate tool fix...",
+    "optimization_trace": [
+      "validate",
+      "normalize",
+      "dependency_resolve",
+      "dead_step_elimination",
+      "merge_compatible_steps",
+      "parallelization",
+      "retry_policy_injection",
+      "cost_estimation"
+    ],
+    "subtasks": [
+      {
+        "description": "Return current time in ISO format",
+        "id": "return_current_time_iso_format",
+        "name": "Return current time in ISO",
+        "tool_name": "tool_return_current_time_iso_format"
+      }
+    ],
+    "synthesis_prompt": "You are the synthesis head. Combine independent subtask outputs into one clear, direct plain-text answer for the user. Keep the answer coherent with the approved plan and user intent. Avoid JSON output.",
+    "tool_functions": {
+      "tool_return_current_time_iso_format": {
+        "code": "from datetime import datetime, timezone\nfrom typing import Any, Dict\n\ndef tool_return_current_time_iso_format(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    now = datetime.now(timezone.utc).astimezone().isoformat()\n    return {\n        \"tool\": \"tool_return_current_time_iso_format\",\n        \"status\": \"ok\",\n        \"result\": now,\n    }\n",
+        "description": "Return current time in ISO format"
+      }
+    }
+  },
+  "name": "smoke_todo_stream",
+  "outputs": [
+    {
+      "data_type": "string",
+      "description": "Final plain-text answer.",
+      "id": "final_answer",
+      "name": "final_answer",
+      "source_step": "synthesize"
+    }
+  ],
+  "steps": [
+    {
+      "config": {
+        "subtask_description": "Return current time in ISO format",
+        "tool_name": "tool_return_current_time_iso_format"
+      },
+      "id": "return_current_time_iso_format",
+      "retry_policy": {
+        "backoff_strategy": "exponential",
+        "initial_delay_seconds": 1.0,
+        "max_delay_seconds": 30.0,
+        "max_retries": 2
+      },
+      "timeout_seconds": 120,
+      "type": "tool"
+    },
+    {
+      "config": {
+        "max_output_tokens": 1024,
+        "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+        "prompt": "You are the synthesis head. Combine independent subtask outputs into one clear, direct plain-text answer for the user. Keep the answer coherent with the approved plan and user intent. Avoid JSON output.",
+        "temperature": 0
+      },
+      "id": "synthesize",
+      "retry_policy": {
+        "backoff_strategy": "exponential",
+        "initial_delay_seconds": 1.0,
+        "max_delay_seconds": 30.0,
+        "max_retries": 2
+      },
+      "timeout_seconds": 120,
+      "type": "llm"
+    }
+  ],
+  "version": "1.0.0"
+}

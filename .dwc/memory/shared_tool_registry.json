@@ -1,6 +1,137 @@
 {
   "entries": [
     {
+      "code": "from typing import Any, Dict\n\ndef tool_extract_key_entities_text_summarize_them(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    text = str(task_input.get(\"doc\") or task_input.get(\"text\") or task_input.get(\"query\") or \"\")\n    cleaned = \" \".join(text.split())\n    summary = cleaned[:500]\n    if summary:\n        summary = \"Summary: \" + summary\n    return {\n        \"tool\": \"tool_extract_key_entities_text_summarize_them\",\n        \"status\": \"ok\",\n        \"result\": summary,\n    }\n",
+      "code_hash": "4d2630e19b3947622b42507f59c0b0232af99d816d8f67b5b8c67b063562e1c6",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:template"
+      ],
+      "created_at": "2026-02-09T20:12:29.138771+00:00",
+      "description_samples": [
+        "Extract key entities from text and summarize them"
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "template",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_extract_key_entities_text_summarize_them",
+      "updated_at": "2026-02-09T20:12:29.138771+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_extract_key_entities_text_summarize_them(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = (\n        task_input.get(\"doc\")\n        or task_input.get(\"text\")\n        or task_input.get(\"query\")\n        or str(task_input)\n    )\n    return {\n        \"tool\": \"tool_extract_key_entities_text_summarize_them\",\n        \"status\": \"ok\",\n        \"result\": str(value),\n    }\n",
+      "code_hash": "b782efc8a23d1dec62e012effc9ce2c0268b3f4512d58d47e83d5d9babd31001",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:fallback"
+      ],
+      "created_at": "2026-02-09T20:09:16.365979+00:00",
+      "description_samples": [
+        "Extract key entities from text and summarize them"
+      ],
+      "failure_count": 3,
+      "last_error": "Traceback (most recent call last):\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-51c44c0a133a/verify_tool.py\", line 121, in <module>\n    _assert_semantics(first)\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-51c44c0a133a/verify_tool.py\", line 80, in _assert_semantics\n    raise ValueError(\"Tool output mirrors source text without transformation.\")\nValueError: Tool output mirrors source text without transformation.",
+      "origin": "fallback",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_extract_key_entities_text_summarize_them",
+      "updated_at": "2026-02-09T20:11:54.964843+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_extract_key_entities_text_summarize_them(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    text = str(task_input.get(\"doc\") or task_input.get(\"text\") or task_input.get(\"query\") or \"\")\n    cleaned = \" \".join(text.split())\n    summary = cleaned[:500]\n    return {\n        \"tool\": \"tool_extract_key_entities_text_summarize_them\",\n        \"status\": \"ok\",\n        \"result\": summary,\n    }\n",
+      "code_hash": "2fb265c382b03ecbf63dceea7393e6d61b643bee2e17647071464c7232916d8a",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:template"
+      ],
+      "created_at": "2026-02-09T20:09:14.818043+00:00",
+      "description_samples": [
+        "Extract key entities from text and summarize them"
+      ],
+      "failure_count": 6,
+      "last_error": "Repeated identical tool candidate code. Stopping retry loop early to avoid redundant failures.",
+      "origin": "template",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_extract_key_entities_text_summarize_them",
+      "updated_at": "2026-02-09T20:11:53.400891+00:00"
+    },
+    {
+      "code": "from datetime import datetime, timezone\nfrom typing import Any, Dict\n\ndef tool_return_current_time(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    now = datetime.now(timezone.utc).astimezone().isoformat()\n    return {\n        \"tool\": \"tool_return_current_time\",\n        \"status\": \"ok\",\n        \"result\": now,\n    }\n",
+      "code_hash": "9f6195e2938baf7f26d9f590c73cdcf9ff963b005073142f6192a5e6f8e59438",
+      "contributors": [
+        "subtask_agent+tool_verifier_agent:shared_registry"
+      ],
+      "created_at": "2026-02-09T20:11:05.352040+00:00",
+      "description_samples": [],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "shared_registry",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Return current time",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_return_current_time",
+      "updated_at": "2026-02-09T20:11:05.352040+00:00"
+    },
+    {
+      "code": "from datetime import datetime, timezone\nfrom typing import Any, Dict\n\ndef tool_return_current_time_iso_format(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    now = datetime.now(timezone.utc).astimezone().isoformat()\n    return {\n        \"tool\": \"tool_return_current_time_iso_format\",\n        \"status\": \"ok\",\n        \"result\": now,\n    }\n",
+      "code_hash": "65d02552eef99d3f1cae734dbf82af51eaadd9e2cc5915c500207dafa66f8e74",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:template"
+      ],
+      "created_at": "2026-02-09T20:10:21.901713+00:00",
+      "description_samples": [
+        "Return current time in ISO format"
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "template",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Return current time",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_return_current_time_iso_format",
+      "updated_at": "2026-02-09T20:10:21.901713+00:00"
+    },
+    {
+      "code": "import json\nimport re\nimport shutil\nimport subprocess\nfrom pathlib import Path\nfrom typing import Any, Dict, List\n\nEXCLUDED_DIR_NAMES = {\n    \".git\",\n    \".venv\",\n    \"venv\",\n    \"__pycache__\",\n    \".mypy_cache\",\n    \".pytest_cache\",\n}\n\nEXCLUDED_GLOBS = (\n    \"!**/.git/**\",\n    \"!**/.venv/**\",\n    \"!**/venv/**\",\n    \"!**/__pycache__/**\",\n    \"!**/.mypy_cache/**\",\n    \"!**/.pytest_cache/**\",\n)\n\n\ndef _is_within(root: Path, candidate: Path) -> bool:\n    try:\n        candidate.resolve().relative_to(root.resolve())\n        return True\n    except Exception:\n        return False\n\n\ndef _parse_rg_line(line: str) -> Dict[str, Any]:\n    parts = line.split(\":\", 3)\n    if len(parts) != 4:\n        return {}\n    path_s, line_s, column_s, preview = parts\n    try:\n        line_no = int(line_s)\n        column_no = int(column_s)\n    except ValueError:\n        return {}\n    return {\n        \"path\": path_s,\n        \"line\": line_no,\n        \"column\": column_no,\n        \"preview\": preview.strip(),\n    }\n\n\ndef _fallback_python_search(\n    *,\n    pattern: str,\n    glob_pattern: str,\n    search_root: Path,\n    workspace_root: Path,\n    max_results: int,\n) -> Dict[str, Any]:\n    try:\n        pattern_re = re.compile(pattern)\n    except re.error:\n        pattern_re = re.compile(re.escape(pattern))\n\n    try:\n        files = sorted(search_root.rglob(glob_pattern))\n    except Exception:\n        files = sorted(search_root.rglob(\"*.py\"))\n\n    matches: List[Dict[str, Any]] = []\n    total_matches = 0\n\n    for path in files:\n        if len(matches) >= max_results and total_matches > max_results:\n            break\n        if not path.is_file():\n            continue\n        if any(part in EXCLUDED_DIR_NAMES for part in path.parts):\n            continue\n        if not _is_within(workspace_root, path):\n            continue\n        try:\n            text = path.read_text(encoding=\"utf-8\", errors=\"ignore\")\n        except Exception:\n            continue\n        for line_no, line in enumerate(text.splitlines(), start=1):\n            for found in pattern_re.finditer(line):\n                total_matches += 1\n                if len(matches) >= max_results:\n                    continue\n                try:\n                    rel_path = str(path.resolve().relative_to(workspace_root.resolve()))\n                except Exception:\n                    rel_path = str(path)\n                matches.append(\n                    {\n                        \"path\": rel_path,\n                        \"line\": line_no,\n                        \"column\": int(found.start()) + 1,\n                        \"preview\": line.strip(),\n                    }\n                )\n    return {\n        \"matches\": matches,\n        \"total_matches\": total_matches,\n    }\n\n\ndef tool_search_python_files_todo_comments_summarize(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    raw_pattern = task_input.get(\"pattern\") or task_input.get(\"query\") or \"\"\n    pattern = str(raw_pattern).strip()\n    if not pattern:\n        payload = {\n            \"engine\": \"none\",\n            \"error\": \"Missing 'pattern' (or query) for code search.\",\n            \"matches\": [],\n            \"total_matches\": 0,\n        }\n        return {\n            \"tool\": \"tool_search_python_files_todo_comments_summarize\",\n            \"status\": \"ok\",\n            \"result\": json.dumps(payload, sort_keys=True),\n        }\n\n    raw_glob = str(task_input.get(\"glob\") or \"*.py\").strip() or \"*.py\"\n    max_results_raw = task_input.get(\"max_results\", 50)\n    try:\n        max_results = max(1, min(int(max_results_raw), 200))\n    except Exception:\n        max_results = 50\n\n    workspace_root = Path(str(task_input.get(\"workspace_root\") or \".\")).resolve()\n    raw_root = str(task_input.get(\"root\") or \".\").strip() or \".\"\n    root_path = Path(raw_root)\n    if root_path.is_absolute():\n        search_root = root_path.resolve()\n    else:\n        search_root = (workspace_root / root_path).resolve()\n\n    if not _is_within(workspace_root, search_root):\n        search_root = workspace_root\n\n    if not search_root.exists():\n        payload = {\n            \"engine\": \"none\",\n            \"error\": f\"Search root does not exist: {search_root}\",\n            \"matches\": [],\n            \"total_matches\": 0,\n        }\n        return {\n            \"tool\": \"tool_search_python_files_todo_comments_summarize\",\n            \"status\": \"ok\",\n            \"result\": json.dumps(payload, sort_keys=True),\n        }\n\n    rg_bin = shutil.which(\"rg\")\n    if rg_bin:\n        command = [\n            rg_bin,\n            \"--line-number\",\n            \"--column\",\n            \"--no-heading\",\n            \"--color\",\n            \"never\",\n            \"--glob\",\n            raw_glob,\n        ]\n        for glob_rule in EXCLUDED_GLOBS:\n            command.extend([\"--glob\", glob_rule])\n        command.extend([\"--\", pattern, str(search_root)])\n        completed = subprocess.run(\n            command,\n            capture_output=True,\n            text=True,\n            check=False,\n        )\n        if completed.returncode in (0, 1):\n            matches: List[Dict[str, Any]] = []\n            total_matches = 0\n            for raw_line in completed.stdout.splitlines():\n                row = _parse_rg_line(raw_line)\n                if not row:\n                    continue\n                total_matches += 1\n                if len(matches) >= max_results:\n                    continue\n                full_path = Path(str(row[\"path\"])).resolve()\n                if not _is_within(workspace_root, full_path):\n                    continue\n                try:\n                    row[\"path\"] = str(full_path.relative_to(workspace_root))\n                except Exception:\n                    row[\"path\"] = str(full_path)\n                matches.append(row)\n            payload = {\n                \"engine\": \"rg\",\n                \"pattern\": pattern,\n                \"glob\": raw_glob,\n                \"root\": str(search_root),\n                \"matches\": matches,\n                \"total_matches\": total_matches,\n                \"truncated\": total_matches > len(matches),\n            }\n            return {\n                \"tool\": \"tool_search_python_files_todo_comments_summarize\",\n                \"status\": \"ok\",\n                \"result\": json.dumps(payload, sort_keys=True),\n            }\n\n    fallback = _fallback_python_search(\n        pattern=pattern,\n        glob_pattern=raw_glob,\n        search_root=search_root,\n        workspace_root=workspace_root,\n        max_results=max_results,\n    )\n    payload = {\n        \"engine\": \"python_fallback\",\n        \"pattern\": pattern,\n        \"glob\": raw_glob,\n        \"root\": str(search_root),\n        \"matches\": fallback[\"matches\"],\n        \"total_matches\": fallback[\"total_matches\"],\n        \"truncated\": fallback[\"total_matches\"] > len(fallback[\"matches\"]),\n    }\n    return {\n        \"tool\": \"tool_search_python_files_todo_comments_summarize\",\n        \"status\": \"ok\",\n        \"result\": json.dumps(payload, sort_keys=True),\n    }\n",
+      "code_hash": "c5ace570b6b555f50769510b2b5418d66dd4dc5b3570010dd6089364f023ae28",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:builtin"
+      ],
+      "created_at": "2026-02-09T20:08:23.582769+00:00",
+      "description_samples": [
+        "Search python files for TODO comments and summarize the findings"
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "builtin",
+      "sample_input": {
+        "glob": "*.py",
+        "max_results": 10,
+        "pattern": "def\\s+[a-zA-Z_][a-zA-Z0-9_]*\\(",
+        "root": "."
+      },
+      "success_count": 1,
+      "tool_name": "tool_search_python_files_todo_comments_summarize",
+      "updated_at": "2026-02-09T20:08:23.582769+00:00"
+    },
+    {
       "code": "from datetime import datetime, timezone\nfrom typing import Any, Dict\n\ndef tool_task_1(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    now = datetime.now(timezone.utc).astimezone().isoformat()\n    return {\n        \"tool\": \"tool_task_1\",\n        \"status\": \"ok\",\n        \"result\": now,\n    }\n",
       "code_hash": "738a69e3073d2f28a1e2dcba2fa577a2b40f82946b2fdd9d0a38234ee529f121",
       "contributors": [

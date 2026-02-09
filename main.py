@@ -32,6 +32,7 @@ from dwc.agents.tool_verifier_agent import ToolVerifierAgent
 from dwc.ir.spec_schema import model_dump_compat
 from dwc.ir.versioning import WorkflowVersionManager, normalize_workflow_name
 from dwc.llm import build_chat_bedrock_converse
+from dwc.memory.agent_todo_board import AgentTodoBoard
 from dwc.memory.history_store import HistoryStore
 from dwc.memory.markdown_memory import MarkdownMemoryStore
 from dwc.memory.shared_tool_registry import SharedToolRegistry
@@ -66,7 +67,12 @@ class CompilationArtifact(BaseModel):
 
 
 class DynamicWorkflowCompiler:
-    def __init__(self, llm: Optional[LLMProtocol] = None) -> None:
+    def __init__(
+        self,
+        llm: Optional[LLMProtocol] = None,
+        *,
+        todo_stream: Optional[bool] = None,
+    ) -> None:
         resolved_llm = llm or self._build_default_llm()
         self.llm = resolved_llm
         self.planner = PlannerAgent(llm=resolved_llm)
@@ -84,9 +90,16 @@ class DynamicWorkflowCompiler:
         self.vector_store = LocalVectorStore()
         self.history_store = HistoryStore()
         self.memory_store = MarkdownMemoryStore()
+        self.todo_board = AgentTodoBoard(
+            root_dir=str(self.memory_store.root_dir),
+            emit_console=todo_stream,
+        )
         self.shared_tool_registry = SharedToolRegistry()
 
-        self.planning_service = PlanningService(self.planner)
+        self.planning_service = PlanningService(
+            self.planner,
+            todo_board=self.todo_board,
+        )
         self.tooling_service = ToolingService(
             subtask_agent=self.subtask_agent,
             tool_builder=self.tool_builder,
@@ -94,12 +107,14 @@ class DynamicWorkflowCompiler:
             memory_store=self.memory_store,
             history_store=self.history_store,
             shared_tool_registry=self.shared_tool_registry,
+            todo_board=self.todo_board,
         )
         self.spec_service = SpecService()
         self.execution_service = ExecutionService(
             executor=self.executor,
             evaluator=self.evaluator,
             versioning=self.versioning,
+            todo_board=self.todo_board,
         )
 
     @staticmethod
@@ -110,9 +125,72 @@ class DynamicWorkflowCompiler:
             LOGGER.warning("Default Bedrock client unavailable; using heuristic fallback mode: %s", exc)
             return None
 
+    def _reset_todo_board(self, *, workflow_name: str, execute: bool) -> None:
+        self.todo_board.begin_run(run_label=workflow_name)
+        self.todo_board.seed_agent(
+            "planner_agent",
+            [
+                ("resolve_plan", "Resolve approved plan"),
+                ("capture_intent", "Capture intent summary"),
+            ],
+        )
+        self.todo_board.seed_agent(
+            "subtask_agent",
+            [("split_subtasks", "Split request into executable subtasks")],
+        )
+        self.todo_board.seed_agent(
+            "tool_builder_agent",
+            [("build_tools", "Generate tool code candidates and select one per subtask")],
+        )
+        self.todo_board.seed_agent(
+            "tool_verifier_agent",
+            [("verify_tools", "Run sandboxed verification checks for tool candidates")],
+        )
+        self.todo_board.seed_agent(
+            "synthesis_agent",
+            [("build_synthesis_prompt", "Build synthesis prompt for final LLM step")],
+        )
+        self.todo_board.seed_agent(
+            "spec_service",
+            [("assemble_spec", "Build workflow spec from plan/subtasks/tools")],
+        )
+        self.todo_board.seed_agent(
+            "optimizer_agent",
+            [("optimize_spec", "Optimize workflow spec for execution")],
+        )
+        self.todo_board.seed_agent(
+            "codegen_agent",
+            [("generate_artifacts", "Generate workflow.py/tools.py/spec.json/README")],
+        )
+        self.todo_board.seed_agent(
+            "execution_service",
+            [("execute_workflow", "Run compile-time execution check")],
+        )
+        self.todo_board.seed_agent(
+            "evaluation_agent",
+            [("assess_stability", "Evaluate execution stability metrics")],
+        )
+        self.todo_board.seed_agent(
+            "versioning_service",
+            [("register_stable_version", "Register stable version when eligible")],
+        )
+        self.todo_board.add_check(
+            "execution_service",
+            "execute_workflow",
+            "Execution enabled." if execute else "Execution disabled (--no-execute).",
+        )
+
     def run_plan_mode(
         self, initial_requirements: Optional[str] = None, max_iterations: int = 6
     ) -> PlanResult:
+        self.todo_board.begin_run(run_label="plan_mode")
+        self.todo_board.seed_agent(
+            "planner_agent",
+            [
+                ("interactive_plan", "Draft and refine plan with user feedback"),
+                ("capture_intent", "Capture intent summary from approved plan"),
+            ],
+        )
         return self.planning_service.run_plan_mode(
             initial_requirements=initial_requirements,
             max_iterations=max_iterations,
@@ -132,6 +210,9 @@ class DynamicWorkflowCompiler:
     ) -> CompilationArtifact:
         if max_tool_iterations < 1:
             raise ValueError("max_tool_iterations must be >= 1")
+
+        resolved_workflow_name = workflow_name or normalize_workflow_name(requirements_text[:60])
+        self._reset_todo_board(workflow_name=resolved_workflow_name, execute=execute)
 
         approved_plan, intent_summary = self.planning_service.resolve_plan(
             requirements_text=requirements_text,
@@ -153,7 +234,6 @@ class DynamicWorkflowCompiler:
             f"Approved plan captured.\n\n{approved_plan}",
         )
 
-        resolved_workflow_name = workflow_name or normalize_workflow_name(requirements_text[:60])
         tooling = self.tooling_service.build_verified_tools(
             workflow_name=resolved_workflow_name,
             requirements_text=requirements_text,
@@ -166,24 +246,98 @@ class DynamicWorkflowCompiler:
         tool_functions = tooling.tool_functions
         tool_records = tooling.tool_records
 
-        synthesis_prompt = self.synthesis_agent.synthesis_prompt(
-            requirements_text=requirements_text,
-            approved_plan=approved_plan,
-            intent_summary=intent_summary,
+        self.todo_board.start(
+            "synthesis_agent",
+            "build_synthesis_prompt",
+            "Generating synthesis prompt.",
         )
-        spec = self.spec_service.build_workflow_spec(
-            workflow_name=workflow_name,
-            requirements_text=requirements_text,
-            approved_plan=approved_plan,
-            intent_summary=intent_summary,
-            current_task_description=current_task_description,
-            subtasks=subtask_rows,
-            tool_functions=tool_functions,
-            synthesis_prompt=synthesis_prompt,
-        )
+        try:
+            synthesis_prompt = self.synthesis_agent.synthesis_prompt(
+                requirements_text=requirements_text,
+                approved_plan=approved_plan,
+                intent_summary=intent_summary,
+            )
+            self.todo_board.complete(
+                "synthesis_agent",
+                "build_synthesis_prompt",
+                "Synthesis prompt ready.",
+            )
+        except Exception as exc:
+            self.todo_board.fail(
+                "synthesis_agent",
+                "build_synthesis_prompt",
+                f"Synthesis prompt failed: {exc}",
+            )
+            raise
 
-        optimized_spec = self.optimizer.optimize(spec)
-        codegen_result = self.codegen.generate(optimized_spec)
+        self.todo_board.start(
+            "spec_service",
+            "assemble_spec",
+            "Building workflow specification.",
+        )
+        try:
+            spec = self.spec_service.build_workflow_spec(
+                workflow_name=workflow_name,
+                requirements_text=requirements_text,
+                approved_plan=approved_plan,
+                intent_summary=intent_summary,
+                current_task_description=current_task_description,
+                subtasks=subtask_rows,
+                tool_functions=tool_functions,
+                synthesis_prompt=synthesis_prompt,
+            )
+            self.todo_board.complete(
+                "spec_service",
+                "assemble_spec",
+                f"Spec assembled with {len(spec.steps)} step(s).",
+            )
+        except Exception as exc:
+            self.todo_board.fail(
+                "spec_service",
+                "assemble_spec",
+                f"Spec assembly failed: {exc}",
+            )
+            raise
+
+        self.todo_board.start(
+            "optimizer_agent",
+            "optimize_spec",
+            "Running optimization passes.",
+        )
+        try:
+            optimized_spec = self.optimizer.optimize(spec)
+            self.todo_board.complete(
+                "optimizer_agent",
+                "optimize_spec",
+                "Optimization complete.",
+            )
+        except Exception as exc:
+            self.todo_board.fail(
+                "optimizer_agent",
+                "optimize_spec",
+                f"Optimization failed: {exc}",
+            )
+            raise
+
+        self.todo_board.start(
+            "codegen_agent",
+            "generate_artifacts",
+            "Generating workflow artifacts.",
+        )
+        try:
+            codegen_result = self.codegen.generate(optimized_spec)
+            self.todo_board.complete(
+                "codegen_agent",
+                "generate_artifacts",
+                f"Generated artifacts at {codegen_result.workflow_dir}.",
+            )
+        except Exception as exc:
+            self.todo_board.fail(
+                "codegen_agent",
+                "generate_artifacts",
+                f"Code generation failed: {exc}",
+            )
+            raise
         self.memory_store.export_snapshot(codegen_result.workflow_dir)
 
         dependencies = self.spec_service.collect_dependencies(
@@ -305,6 +459,8 @@ def _render_home_screen() -> str:
         "Execution behavior:",
         "  - Default: compile and run generated workflow for a smoke check.",
         "  - --no-execute: compile only, skip execution.",
+        "  - Live [todo] progress lines show agent completion checks during compile.",
+        "  - Force progress stream: --todo-stream or disable with --no-todo-stream.",
         "",
         "Input options for execution payload:",
         "  - --input-json '<json>'",
@@ -331,12 +487,23 @@ def main() -> None:
     parser.add_argument("--input-file", type=str, default=None)
     parser.add_argument("--output-file", type=str, default=None)
     parser.add_argument("--no-home-screen", action="store_true")
+    parser.add_argument("--todo-stream", action="store_true")
+    parser.add_argument("--no-todo-stream", action="store_true")
     args = parser.parse_args()
+
+    if args.todo_stream and args.no_todo_stream:
+        raise ValueError("Choose either --todo-stream or --no-todo-stream, not both.")
 
     if not args.no_home_screen:
         print(_render_home_screen())
 
-    compiler = DynamicWorkflowCompiler()
+    todo_stream: Optional[bool] = None
+    if args.todo_stream:
+        todo_stream = True
+    elif args.no_todo_stream:
+        todo_stream = False
+
+    compiler = DynamicWorkflowCompiler(todo_stream=todo_stream)
     initial_state = _load_input_payload(args.input_json, args.input_file)
 
     plan_mode_requested = args.plan_mode or (

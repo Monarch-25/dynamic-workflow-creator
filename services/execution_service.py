@@ -4,13 +4,14 @@ Execution-stage service for runtime execution, stability evaluation, and version
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 from dwc.agents.evaluation_agent import EvaluationAgent, StabilityReport
 from dwc.ir.spec_schema import WorkflowSpec
 from dwc.ir.versioning import WorkflowVersionManager
+from dwc.memory.agent_todo_board import AgentTodoBoard
 from dwc.runtime.executor import ExecutionReport, WorkflowExecutor
 
 
@@ -28,10 +29,12 @@ class ExecutionService:
         executor: WorkflowExecutor,
         evaluator: EvaluationAgent,
         versioning: WorkflowVersionManager,
+        todo_board: Optional[AgentTodoBoard] = None,
     ) -> None:
         self.executor = executor
         self.evaluator = evaluator
         self.versioning = versioning
+        self.todo_board = todo_board
 
     def execute_and_assess(
         self,
@@ -44,14 +47,36 @@ class ExecutionService:
         script_args: List[str],
         tool_records: List[Any],
     ) -> ExecutionStageResult:
-        if execute:
-            report = self.executor.execute(
-                workflow_name=optimized_spec.name,
-                script_path=generated_script_path,
-                script_args=script_args,
-                dependencies=dependencies,
-                iteration=0,
+        if self.todo_board is not None:
+            self.todo_board.start(
+                "execution_service",
+                "execute_workflow",
+                "Starting compile-time workflow execution.",
             )
+        if execute:
+            try:
+                report = self.executor.execute(
+                    workflow_name=optimized_spec.name,
+                    script_path=generated_script_path,
+                    script_args=script_args,
+                    dependencies=dependencies,
+                    iteration=0,
+                )
+            except Exception as exc:
+                if self.todo_board is not None:
+                    self.todo_board.fail(
+                        "execution_service",
+                        "execute_workflow",
+                        f"Execution crashed: {exc}",
+                    )
+                raise
+            if self.todo_board is not None:
+                status_text = "success" if report.success else "failed"
+                self.todo_board.complete(
+                    "execution_service",
+                    "execute_workflow",
+                    f"Execution {status_text} (latency_ms={report.latency_ms}).",
+                )
         else:
             report = ExecutionReport(
                 success=False,
@@ -61,13 +86,31 @@ class ExecutionService:
                 resource_usage={},
                 iteration=0,
             )
+            if self.todo_board is not None:
+                self.todo_board.complete(
+                    "execution_service",
+                    "execute_workflow",
+                    "Execution skipped (--no-execute).",
+                )
 
+        if self.todo_board is not None:
+            self.todo_board.start(
+                "evaluation_agent",
+                "assess_stability",
+                "Assessing stability from execution report.",
+            )
         stability = self.evaluator.evaluate([report], min_success_streak=1)
         if not execute:
             stability = StabilityReport(
                 stable=False,
                 reason="Execution skipped, artifact not eligible for stable versioning.",
                 metrics=stability.metrics,
+            )
+        if self.todo_board is not None:
+            self.todo_board.complete(
+                "evaluation_agent",
+                "assess_stability",
+                f"stable={stability.stable}. reason={stability.reason[:120]}",
             )
 
         performance = {
@@ -78,6 +121,12 @@ class ExecutionService:
 
         version = optimized_spec.version
         if execute and report.success and stability.stable:
+            if self.todo_board is not None:
+                self.todo_board.start(
+                    "versioning_service",
+                    "register_stable_version",
+                    "Registering stable workflow version.",
+                )
             record = self.versioning.register_stable_version(
                 workflow_name=optimized_spec.name,
                 spec=spec,
@@ -86,6 +135,18 @@ class ExecutionService:
                 performance=performance,
             )
             version = record.version
+            if self.todo_board is not None:
+                self.todo_board.complete(
+                    "versioning_service",
+                    "register_stable_version",
+                    f"Registered stable version {version}.",
+                )
+        elif self.todo_board is not None:
+            self.todo_board.complete(
+                "versioning_service",
+                "register_stable_version",
+                "Skipped stable registration.",
+            )
 
         return ExecutionStageResult(
             report=report,

@@ -8,7 +8,7 @@ import json
 import logging
 import re
 from textwrap import dedent
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
@@ -75,27 +75,47 @@ class ToolBuilderAgent:
             )
 
         if self.llm is not None:
-            try:
-                llm_code = self._build_with_llm(
-                    function_name=function_name,
-                    subtask_description=subtask.description,
-                    shared_task_description=shared_task_description,
-                    feedback=feedback,
-                )
-                self._validate_generated_code(llm_code)
-                return ToolCandidate(
-                    name=function_name,
-                    description=subtask.description,
-                    code=llm_code,
-                    sample_input=self._sample_input_for(subtask.description),
-                    origin="llm",
-                )
-            except Exception as exc:
-                LOGGER.warning(
-                    "ToolBuilderAgent fallback to template tool for subtask '%s': %s",
-                    subtask.id,
-                    exc,
-                )
+            retry_feedback = feedback
+            last_error: Optional[Exception] = None
+            max_internal_llm_attempts = 2
+            for llm_attempt in range(1, max_internal_llm_attempts + 1):
+                try:
+                    llm_code = self._build_with_llm(
+                        function_name=function_name,
+                        subtask_description=subtask.description,
+                        shared_task_description=shared_task_description,
+                        feedback=retry_feedback,
+                    )
+                    llm_code = self._sanitize_candidate_code(llm_code)
+                    self._validate_generated_code(llm_code)
+                    return ToolCandidate(
+                        name=function_name,
+                        description=subtask.description,
+                        code=llm_code,
+                        sample_input=self._sample_input_for(subtask.description),
+                        origin="llm",
+                    )
+                except Exception as exc:
+                    last_error = exc
+                    retry_feedback = self._merge_builder_feedback(
+                        prior_feedback=feedback,
+                        current_feedback=(
+                            "Previous candidate failed validation with error: "
+                            f"{exc}. Regenerate fully valid Python code and avoid triple-quoted strings."
+                        ),
+                    )
+                    if llm_attempt < max_internal_llm_attempts:
+                        LOGGER.warning(
+                            "ToolBuilderAgent retrying LLM generation for subtask '%s' after error: %s",
+                            subtask.id,
+                            exc,
+                        )
+                        continue
+                    LOGGER.warning(
+                        "ToolBuilderAgent fallback to template tool for subtask '%s': %s",
+                        subtask.id,
+                        last_error,
+                    )
 
         template_code = self._template_code(
             function_name=function_name,
@@ -113,6 +133,7 @@ class ToolBuilderAgent:
 
     def build_fallback_tool(self, *, subtask: SubtaskSpec) -> ToolCandidate:
         function_name = self._function_name(subtask.id)
+        subtask_literal = json.dumps(str(subtask.description))
         code = dedent(
             f"""
             from typing import Any, Dict
@@ -124,10 +145,14 @@ class ToolBuilderAgent:
                     or task_input.get("query")
                     or str(task_input)
                 )
+                cleaned = " ".join(str(value).split()).strip()
+                if not cleaned:
+                    cleaned = {subtask_literal}
+                result = ("Fallback output for: " + {subtask_literal} + ". " + cleaned)[:900]
                 return {{
                     "tool": "{function_name}",
                     "status": "ok",
-                    "result": str(value),
+                    "result": result,
                 }}
             """
         ).strip() + "\n"
@@ -158,6 +183,7 @@ Requirements:
 - Keep deterministic.
 - Use only Python stdlib.
 - Handle missing keys gracefully.
+- Do not use triple-quoted strings or docstrings.
 - You may use `safe_cli(command: str, user_message: Optional[str] = None) -> str` for non-destructive CLI calls.
 
 Subtask:
@@ -233,6 +259,8 @@ def {function_name}(task_input: Dict[str, Any]) -> Dict[str, Any]:
     text = str(task_input.get("doc") or task_input.get("text") or task_input.get("query") or "")
     cleaned = " ".join(text.split())
     summary = cleaned[:500]
+    if summary:
+        summary = "Summary: " + summary
     return {{
         "tool": "{function_name}",
         "status": "ok",
@@ -249,14 +277,15 @@ from typing import Any, Dict
 
 def {function_name}(task_input: Dict[str, Any]) -> Dict[str, Any]:
     value = task_input.get("query") or task_input.get("doc") or task_input.get("text") or ""
-    text = str(value).strip()
+    text = " ".join(str(value).split()).strip()
     if not text:
         text = {subtask_literal}
+    text = text[:700]
     result = (
-        "Subtask: " + {subtask_literal} + ". "
-        "Input: " + text + ". "
+        "Task focus: " + {subtask_literal} + ". "
+        "Processed output: " + text + ". "
         + {note_literal}
-    )
+    )[:900]
     return {{
         "tool": "{function_name}",
         "status": "ok",
@@ -279,6 +308,7 @@ def {function_name}(task_input: Dict[str, Any]) -> Dict[str, Any]:
             sanitized = "task"
         if sanitized[0].isdigit():
             sanitized = f"task_{sanitized}"
+        sanitized = sanitized[:48].rstrip("_") or "task"
         return f"tool_{sanitized}"
 
     @staticmethod
@@ -295,9 +325,75 @@ def {function_name}(task_input: Dict[str, Any]) -> Dict[str, Any]:
 
     @staticmethod
     def _extract_python(text: str) -> str:
-        stripped = text.strip()
-        if stripped.startswith("```"):
-            match = re.search(r"```(?:python)?\s*(.*?)```", stripped, re.DOTALL | re.I)
-            if match:
-                return match.group(1).strip() + "\n"
+        stripped = str(text or "").strip()
+        if not stripped:
+            return ""
+
+        blocks = re.findall(r"```(?:python)?\s*(.*?)```", stripped, re.DOTALL | re.I)
+        if blocks:
+            stripped = "\n\n".join(block.strip() for block in blocks if block.strip())
+
+        lines = stripped.splitlines()
+        start_idx = 0
+        for idx, line in enumerate(lines):
+            token = line.strip()
+            if token.startswith(("from ", "import ", "def ")):
+                start_idx = idx
+                break
+        stripped = "\n".join(lines[start_idx:]).strip()
+        if not stripped:
+            return ""
         return stripped + ("\n" if not stripped.endswith("\n") else "")
+
+    @classmethod
+    def _sanitize_candidate_code(cls, code: str) -> str:
+        candidate = str(code or "").replace("\r\n", "\n").strip()
+        if not candidate:
+            raise ValueError("Empty candidate code.")
+        candidate = cls._extract_python(candidate).strip()
+        if not candidate:
+            raise ValueError("No python code extracted from candidate.")
+
+        try:
+            compile(candidate, "<tool_candidate_precheck>", "exec")
+        except SyntaxError as exc:
+            lower_error = str(exc).lower()
+            if "triple-quoted string literal" in lower_error:
+                repaired = cls._repair_unterminated_triple_quotes(candidate)
+                compile(repaired, "<tool_candidate_repaired>", "exec")
+                return repaired + ("\n" if not repaired.endswith("\n") else "")
+            raise
+        return candidate + ("\n" if not candidate.endswith("\n") else "")
+
+    @staticmethod
+    def _repair_unterminated_triple_quotes(code: str) -> str:
+        # Remove balanced triple-quoted blocks first.
+        repaired = re.sub(r'"""[\s\S]*?"""', '""', code)
+        repaired = re.sub(r"'''[\s\S]*?'''", "''", repaired)
+        # Convert stray triple-quote tokens into single-quote tokens to avoid parser traps.
+        if repaired.count('"""') % 2 != 0:
+            repaired = repaired.replace('"""', '"')
+        if repaired.count("'''") % 2 != 0:
+            repaired = repaired.replace("'''", "'")
+        fixed_lines = []
+        for raw_line in repaired.splitlines():
+            line = raw_line.rstrip()
+            # If a line now has an unterminated plain string, force-close it.
+            if line.count('"') % 2 != 0:
+                line += '"'
+            if line.count("'") % 2 != 0:
+                line += "'"
+            fixed_lines.append(line)
+        return "\n".join(fixed_lines).strip()
+
+    @staticmethod
+    def _merge_builder_feedback(
+        *,
+        prior_feedback: Optional[str],
+        current_feedback: str,
+    ) -> str:
+        first = str(prior_feedback or "").strip()
+        second = str(current_feedback or "").strip()
+        if first and second:
+            return f"{first}\n\n{second}"
+        return first or second
