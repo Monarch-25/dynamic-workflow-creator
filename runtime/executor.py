@@ -52,6 +52,7 @@ class WorkflowExecutor:
         *,
         workflow_name: str,
         script_path: str,
+        script_args: Optional[List[str]] = None,
         input_payload: Optional[Dict[str, Any]] = None,
         dependencies: Optional[List[str]] = None,
         iteration: int = 0,
@@ -83,6 +84,7 @@ class WorkflowExecutor:
             result = self.sandbox.run_script(
                 session=session,
                 script_path=script_path,
+                script_args=script_args,
                 input_payload=input_payload,
             )
             success = result.exit_code == 0

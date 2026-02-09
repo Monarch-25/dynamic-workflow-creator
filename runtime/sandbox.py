@@ -65,13 +65,13 @@ class SandboxConfig(BaseModel):
 class VenvSandbox:
     def __init__(self, config: Optional[SandboxConfig] = None) -> None:
         self.config = config or SandboxConfig()
-        self.root_dir = Path(self.config.root_dir)
+        self.root_dir = Path(self.config.root_dir).resolve()
         self.root_dir.mkdir(parents=True, exist_ok=True)
 
     def create_session(self, workflow_name: str) -> SandboxSession:
         safe_name = "".join(char if char.isalnum() or char == "_" else "_" for char in workflow_name)
         session_id = f"{safe_name}-{uuid.uuid4().hex[:12]}"
-        session_root = self.root_dir / session_id
+        session_root = (self.root_dir / session_id).resolve()
         venv_dir = session_root / "venv"
         session_root.mkdir(parents=True, exist_ok=True)
 
@@ -122,11 +122,14 @@ class VenvSandbox:
         self,
         session: SandboxSession,
         script_path: str,
+        script_args: Optional[List[str]] = None,
         input_payload: Optional[Dict[str, Any]] = None,
         timeout_seconds: Optional[int] = None,
     ) -> SandboxExecutionResult:
         command = [str(session.python_bin), script_path]
-        payload = json.dumps(input_payload or {})
+        if script_args:
+            command.extend(script_args)
+        payload = "" if input_payload is None else json.dumps(input_payload)
         timeout = timeout_seconds or self.config.timeout_seconds
 
         env = {}

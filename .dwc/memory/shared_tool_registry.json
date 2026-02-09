@@ -1,0 +1,162 @@
+{
+  "entries": [
+    {
+      "code": "from datetime import datetime, timezone\nfrom typing import Any, Dict\n\ndef tool_task_1(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    now = datetime.now(timezone.utc).astimezone().isoformat()\n    return {\n        \"tool\": \"tool_task_1\",\n        \"status\": \"ok\",\n        \"result\": now,\n    }\n",
+      "code_hash": "738a69e3073d2f28a1e2dcba2fa577a2b40f82946b2fdd9d0a38234ee529f121",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:template",
+        "subtask_agent+tool_verifier_agent:shared_registry"
+      ],
+      "created_at": "2026-02-09T19:13:25.092490+00:00",
+      "description_samples": [],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "shared_registry",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Return current time",
+        "text": "Example input text"
+      },
+      "success_count": 2,
+      "tool_name": "tool_task_1",
+      "updated_at": "2026-02-09T19:13:32.552870+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_task_3(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = task_input.get(\"query\") or task_input.get(\"doc\") or task_input.get(\"text\") or \"\"\n    text = str(value).strip()\n    if not text:\n        text = \"produce final concise answer\"\n    result = (\n        \"Subtask: \" + \"produce final concise answer\" + \". \"\n        \"Input: \" + text + \". \"\n        + \"Verifier feedback: Potential reusable implementation from shared tool registry:\\n- tool=tool_task_1, origin=builtin, similarity=0.270833\"\n    )\n    return {\n        \"tool\": \"tool_task_3\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "82ca8f93963a65da8e1c61a9cf5d32562fe6b3af67c925fb9e49098544358202",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:template"
+      ],
+      "created_at": "2026-02-09T19:03:53.357241+00:00",
+      "description_samples": [
+        "produce final concise answer"
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "template",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_task_3",
+      "updated_at": "2026-02-09T19:03:53.357241+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_task_2(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    text = str(task_input.get(\"doc\") or task_input.get(\"text\") or task_input.get(\"query\") or \"\")\n    cleaned = \" \".join(text.split())\n    summary = cleaned[:500]\n    return {\n        \"tool\": \"tool_task_2\",\n        \"status\": \"ok\",\n        \"result\": summary,\n    }\n",
+      "code_hash": "6e90e35e348c831b4a94447faee264c23a6835ada4494710c7dd0ad878945f9f",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:template",
+        "subtask_agent+tool_verifier_agent:shared_registry"
+      ],
+      "created_at": "2026-02-09T19:03:17.555391+00:00",
+      "description_samples": [],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "shared_registry",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 2,
+      "tool_name": "tool_task_2",
+      "updated_at": "2026-02-09T19:03:51.601749+00:00"
+    },
+    {
+      "code": "import json\nimport re\nimport shutil\nimport subprocess\nfrom pathlib import Path\nfrom typing import Any, Dict, List\n\nEXCLUDED_DIR_NAMES = {\n    \".git\",\n    \".venv\",\n    \"venv\",\n    \"__pycache__\",\n    \".mypy_cache\",\n    \".pytest_cache\",\n}\n\nEXCLUDED_GLOBS = (\n    \"!**/.git/**\",\n    \"!**/.venv/**\",\n    \"!**/venv/**\",\n    \"!**/__pycache__/**\",\n    \"!**/.mypy_cache/**\",\n    \"!**/.pytest_cache/**\",\n)\n\n\ndef _is_within(root: Path, candidate: Path) -> bool:\n    try:\n        candidate.resolve().relative_to(root.resolve())\n        return True\n    except Exception:\n        return False\n\n\ndef _parse_rg_line(line: str) -> Dict[str, Any]:\n    parts = line.split(\":\", 3)\n    if len(parts) != 4:\n        return {}\n    path_s, line_s, column_s, preview = parts\n    try:\n        line_no = int(line_s)\n        column_no = int(column_s)\n    except ValueError:\n        return {}\n    return {\n        \"path\": path_s,\n        \"line\": line_no,\n        \"column\": column_no,\n        \"preview\": preview.strip(),\n    }\n\n\ndef _fallback_python_search(\n    *,\n    pattern: str,\n    glob_pattern: str,\n    search_root: Path,\n    workspace_root: Path,\n    max_results: int,\n) -> Dict[str, Any]:\n    try:\n        pattern_re = re.compile(pattern)\n    except re.error:\n        pattern_re = re.compile(re.escape(pattern))\n\n    try:\n        files = sorted(search_root.rglob(glob_pattern))\n    except Exception:\n        files = sorted(search_root.rglob(\"*.py\"))\n\n    matches: List[Dict[str, Any]] = []\n    total_matches = 0\n\n    for path in files:\n        if len(matches) >= max_results and total_matches > max_results:\n            break\n        if not path.is_file():\n            continue\n        if any(part in EXCLUDED_DIR_NAMES for part in path.parts):\n            continue\n        if not _is_within(workspace_root, path):\n            continue\n        try:\n            text = path.read_text(encoding=\"utf-8\", errors=\"ignore\")\n        except Exception:\n            continue\n        for line_no, line in enumerate(text.splitlines(), start=1):\n            for found in pattern_re.finditer(line):\n                total_matches += 1\n                if len(matches) >= max_results:\n                    continue\n                try:\n                    rel_path = str(path.resolve().relative_to(workspace_root.resolve()))\n                except Exception:\n                    rel_path = str(path)\n                matches.append(\n                    {\n                        \"path\": rel_path,\n                        \"line\": line_no,\n                        \"column\": int(found.start()) + 1,\n                        \"preview\": line.strip(),\n                    }\n                )\n    return {\n        \"matches\": matches,\n        \"total_matches\": total_matches,\n    }\n\n\ndef tool_task_1(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    raw_pattern = task_input.get(\"pattern\") or task_input.get(\"query\") or \"\"\n    pattern = str(raw_pattern).strip()\n    if not pattern:\n        payload = {\n            \"engine\": \"none\",\n            \"error\": \"Missing 'pattern' (or query) for code search.\",\n            \"matches\": [],\n            \"total_matches\": 0,\n        }\n        return {\n            \"tool\": \"tool_task_1\",\n            \"status\": \"ok\",\n            \"result\": json.dumps(payload, sort_keys=True),\n        }\n\n    raw_glob = str(task_input.get(\"glob\") or \"*.py\").strip() or \"*.py\"\n    max_results_raw = task_input.get(\"max_results\", 50)\n    try:\n        max_results = max(1, min(int(max_results_raw), 200))\n    except Exception:\n        max_results = 50\n\n    workspace_root = Path(str(task_input.get(\"workspace_root\") or \".\")).resolve()\n    raw_root = str(task_input.get(\"root\") or \".\").strip() or \".\"\n    root_path = Path(raw_root)\n    if root_path.is_absolute():\n        search_root = root_path.resolve()\n    else:\n        search_root = (workspace_root / root_path).resolve()\n\n    if not _is_within(workspace_root, search_root):\n        search_root = workspace_root\n\n    if not search_root.exists():\n        payload = {\n            \"engine\": \"none\",\n            \"error\": f\"Search root does not exist: {search_root}\",\n            \"matches\": [],\n            \"total_matches\": 0,\n        }\n        return {\n            \"tool\": \"tool_task_1\",\n            \"status\": \"ok\",\n            \"result\": json.dumps(payload, sort_keys=True),\n        }\n\n    rg_bin = shutil.which(\"rg\")\n    if rg_bin:\n        command = [\n            rg_bin,\n            \"--line-number\",\n            \"--column\",\n            \"--no-heading\",\n            \"--color\",\n            \"never\",\n            \"--glob\",\n            raw_glob,\n        ]\n        for glob_rule in EXCLUDED_GLOBS:\n            command.extend([\"--glob\", glob_rule])\n        command.extend([\"--\", pattern, str(search_root)])\n        completed = subprocess.run(\n            command,\n            capture_output=True,\n            text=True,\n            check=False,\n        )\n        if completed.returncode in (0, 1):\n            matches: List[Dict[str, Any]] = []\n            total_matches = 0\n            for raw_line in completed.stdout.splitlines():\n                row = _parse_rg_line(raw_line)\n                if not row:\n                    continue\n                total_matches += 1\n                if len(matches) >= max_results:\n                    continue\n                full_path = Path(str(row[\"path\"])).resolve()\n                if not _is_within(workspace_root, full_path):\n                    continue\n                try:\n                    row[\"path\"] = str(full_path.relative_to(workspace_root))\n                except Exception:\n                    row[\"path\"] = str(full_path)\n                matches.append(row)\n            payload = {\n                \"engine\": \"rg\",\n                \"pattern\": pattern,\n                \"glob\": raw_glob,\n                \"root\": str(search_root),\n                \"matches\": matches,\n                \"total_matches\": total_matches,\n                \"truncated\": total_matches > len(matches),\n            }\n            return {\n                \"tool\": \"tool_task_1\",\n                \"status\": \"ok\",\n                \"result\": json.dumps(payload, sort_keys=True),\n            }\n\n    fallback = _fallback_python_search(\n        pattern=pattern,\n        glob_pattern=raw_glob,\n        search_root=search_root,\n        workspace_root=workspace_root,\n        max_results=max_results,\n    )\n    payload = {\n        \"engine\": \"python_fallback\",\n        \"pattern\": pattern,\n        \"glob\": raw_glob,\n        \"root\": str(search_root),\n        \"matches\": fallback[\"matches\"],\n        \"total_matches\": fallback[\"total_matches\"],\n        \"truncated\": fallback[\"total_matches\"] > len(fallback[\"matches\"]),\n    }\n    return {\n        \"tool\": \"tool_task_1\",\n        \"status\": \"ok\",\n        \"result\": json.dumps(payload, sort_keys=True),\n    }\n",
+      "code_hash": "442a7810ea694429f36913fa3f2e0ae7f91db52a6c70732c1267e18fc7bac3dc",
+      "contributors": [
+        "tool_builder_agent:builtin",
+        "shared_tool_registry",
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:builtin"
+      ],
+      "created_at": "2026-02-09T18:44:08.704929+00:00",
+      "description_samples": [
+        "Create a workflow that searches python files",
+        "Build a shell command workflow that requires user confirmation and allows modify or skip",
+        "Analyze a python repo: find references, extract key snippets, summarize findings, and provide final recommendation",
+        "First search python functions"
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "builtin",
+      "sample_input": {
+        "glob": "*.py",
+        "max_results": 10,
+        "pattern": "def\\s+[a-zA-Z_][a-zA-Z0-9_]*\\(",
+        "root": "."
+      },
+      "success_count": 5,
+      "tool_name": "tool_task_1",
+      "updated_at": "2026-02-09T19:03:49.869670+00:00"
+    },
+    {
+      "code": "import json\nfrom typing import Any, Dict\n\ndef tool_task_1(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    raw_command = task_input.get(\"command\") or task_input.get(\"query\") or \"\"\n    command = str(raw_command).strip()\n    if not command:\n        return {\n            \"tool\": \"tool_task_1\",\n            \"status\": \"ok\",\n            \"result\": json.dumps({\n                \"error\": \"Missing command. Pass task_input['command'].\",\n                \"output\": \"\",\n            }, sort_keys=True),\n        }\n\n    user_message = task_input.get(\"user_message\") or task_input.get(\"approval\") or \"\"\n    user_message = str(user_message).strip() or None\n\n    output = safe_cli(command, user_message=user_message)\n    payload = {\n        \"command\": command,\n        \"user_message\": user_message or \"\",\n        \"output\": output,\n    }\n    return {\n        \"tool\": \"tool_task_1\",\n        \"status\": \"ok\",\n        \"result\": json.dumps(payload, sort_keys=True),\n    }\n",
+      "code_hash": "323976142dff77ec57929a3dde5758e90850283784434aedd8bd5437f68348ec",
+      "contributors": [
+        "tool_builder_agent:builtin",
+        "subtask_agent+tool_verifier_agent:shared_registry"
+      ],
+      "created_at": "2026-02-09T18:45:36.244833+00:00",
+      "description_samples": [],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "shared_registry",
+      "sample_input": {
+        "command": "echo hello",
+        "user_message": "modify:echo approved-from-user"
+      },
+      "success_count": 2,
+      "tool_name": "tool_task_1",
+      "updated_at": "2026-02-09T18:48:49.284311+00:00"
+    },
+    {
+      "code": "import re\nfrom typing import Any, Dict\n\ndef tool_task_1(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    text = str(task_input.get(\"doc\") or task_input.get(\"text\") or \"\")\n    pattern = re.compile(r\"```(?:[a-zA-Z0-9_+-]+)?\\n(.*?)```\", re.DOTALL)\n    blocks = [chunk.strip() for chunk in pattern.findall(text) if chunk.strip()]\n    return {\n        \"tool\": \"tool_task_1\",\n        \"status\": \"ok\",\n        \"result\": \"\\n\\n\".join(blocks),\n    }\n",
+      "code_hash": "6722910b11adb8079ad9b684b96a67b5e42e2127f25020bd37182638ef2d54a7",
+      "contributors": [
+        "tool_builder_agent:template"
+      ],
+      "created_at": "2026-02-09T18:46:58.698221+00:00",
+      "description_samples": [
+        "Create a workflow that extracts python code blocks from markdown and summarize output"
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "template",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_task_1",
+      "updated_at": "2026-02-09T18:46:58.698221+00:00"
+    },
+    {
+      "code": "import json\nimport re\nimport shutil\nimport subprocess\nfrom pathlib import Path\nfrom typing import Any, Dict, List\n\nEXCLUDED_DIR_NAMES = {\n    \".git\",\n    \".venv\",\n    \"venv\",\n    \"__pycache__\",\n    \".mypy_cache\",\n    \".pytest_cache\",\n}\n\nEXCLUDED_GLOBS = (\n    \"!**/.git/**\",\n    \"!**/.venv/**\",\n    \"!**/venv/**\",\n    \"!**/__pycache__/**\",\n    \"!**/.mypy_cache/**\",\n    \"!**/.pytest_cache/**\",\n)\n\n\ndef _is_within(root: Path, candidate: Path) -> bool:\n    try:\n        candidate.resolve().relative_to(root.resolve())\n        return True\n    except Exception:\n        return False\n\n\ndef _parse_rg_line(line: str) -> Dict[str, Any]:\n    parts = line.split(\":\", 3)\n    if len(parts) != 4:\n        return {}\n    path_s, line_s, column_s, preview = parts\n    try:\n        line_no = int(line_s)\n        column_no = int(column_s)\n    except ValueError:\n        return {}\n    return {\n        \"path\": path_s,\n        \"line\": line_no,\n        \"column\": column_no,\n        \"preview\": preview.strip(),\n    }\n\n\ndef _fallback_python_search(\n    *,\n    pattern: str,\n    glob_pattern: str,\n    search_root: Path,\n    workspace_root: Path,\n    max_results: int,\n) -> Dict[str, Any]:\n    try:\n        pattern_re = re.compile(pattern)\n    except re.error:\n        pattern_re = re.compile(re.escape(pattern))\n\n    try:\n        files = sorted(search_root.rglob(glob_pattern))\n    except Exception:\n        files = sorted(search_root.rglob(\"*.py\"))\n\n    matches: List[Dict[str, Any]] = []\n    total_matches = 0\n\n    for path in files:\n        if len(matches) >= max_results and total_matches > max_results:\n            break\n        if not path.is_file():\n            continue\n        if any(part in EXCLUDED_DIR_NAMES for part in path.parts):\n            continue\n        if not _is_within(workspace_root, path):\n            continue\n        try:\n            text = path.read_text(encoding=\"utf-8\", errors=\"ignore\")\n        except Exception:\n            continue\n        for line_no, line in enumerate(text.splitlines(), start=1):\n            for found in pattern_re.finditer(line):\n                total_matches += 1\n                if len(matches) >= max_results:\n                    continue\n                try:\n                    rel_path = str(path.resolve().relative_to(workspace_root.resolve()))\n                except Exception:\n                    rel_path = str(path)\n                matches.append(\n                    {\n                        \"path\": rel_path,\n                        \"line\": line_no,\n                        \"column\": int(found.start()) + 1,\n                        \"preview\": line.strip(),\n                    }\n                )\n    return {\n        \"matches\": matches,\n        \"total_matches\": total_matches,\n    }\n\n\ndef tool_task_2(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    raw_pattern = task_input.get(\"pattern\") or task_input.get(\"query\") or \"\"\n    pattern = str(raw_pattern).strip()\n    if not pattern:\n        payload = {\n            \"engine\": \"none\",\n            \"error\": \"Missing 'pattern' (or query) for code search.\",\n            \"matches\": [],\n            \"total_matches\": 0,\n        }\n        return {\n            \"tool\": \"tool_task_2\",\n            \"status\": \"ok\",\n            \"result\": json.dumps(payload, sort_keys=True),\n        }\n\n    raw_glob = str(task_input.get(\"glob\") or \"*.py\").strip() or \"*.py\"\n    max_results_raw = task_input.get(\"max_results\", 50)\n    try:\n        max_results = max(1, min(int(max_results_raw), 200))\n    except Exception:\n        max_results = 50\n\n    workspace_root = Path(str(task_input.get(\"workspace_root\") or \".\")).resolve()\n    raw_root = str(task_input.get(\"root\") or \".\").strip() or \".\"\n    root_path = Path(raw_root)\n    if root_path.is_absolute():\n        search_root = root_path.resolve()\n    else:\n        search_root = (workspace_root / root_path).resolve()\n\n    if not _is_within(workspace_root, search_root):\n        search_root = workspace_root\n\n    if not search_root.exists():\n        payload = {\n            \"engine\": \"none\",\n            \"error\": f\"Search root does not exist: {search_root}\",\n            \"matches\": [],\n            \"total_matches\": 0,\n        }\n        return {\n            \"tool\": \"tool_task_2\",\n            \"status\": \"ok\",\n            \"result\": json.dumps(payload, sort_keys=True),\n        }\n\n    rg_bin = shutil.which(\"rg\")\n    if rg_bin:\n        command = [\n            rg_bin,\n            \"--line-number\",\n            \"--column\",\n            \"--no-heading\",\n            \"--color\",\n            \"never\",\n            \"--glob\",\n            raw_glob,\n        ]\n        for glob_rule in EXCLUDED_GLOBS:\n            command.extend([\"--glob\", glob_rule])\n        command.extend([\"--\", pattern, str(search_root)])\n        completed = subprocess.run(\n            command,\n            capture_output=True,\n            text=True,\n            check=False,\n        )\n        if completed.returncode in (0, 1):\n            matches: List[Dict[str, Any]] = []\n            total_matches = 0\n            for raw_line in completed.stdout.splitlines():\n                row = _parse_rg_line(raw_line)\n                if not row:\n                    continue\n                total_matches += 1\n                if len(matches) >= max_results:\n                    continue\n                full_path = Path(str(row[\"path\"])).resolve()\n                if not _is_within(workspace_root, full_path):\n                    continue\n                try:\n                    row[\"path\"] = str(full_path.relative_to(workspace_root))\n                except Exception:\n                    row[\"path\"] = str(full_path)\n                matches.append(row)\n            payload = {\n                \"engine\": \"rg\",\n                \"pattern\": pattern,\n                \"glob\": raw_glob,\n                \"root\": str(search_root),\n                \"matches\": matches,\n                \"total_matches\": total_matches,\n                \"truncated\": total_matches > len(matches),\n            }\n            return {\n                \"tool\": \"tool_task_2\",\n                \"status\": \"ok\",\n                \"result\": json.dumps(payload, sort_keys=True),\n            }\n\n    fallback = _fallback_python_search(\n        pattern=pattern,\n        glob_pattern=raw_glob,\n        search_root=search_root,\n        workspace_root=workspace_root,\n        max_results=max_results,\n    )\n    payload = {\n        \"engine\": \"python_fallback\",\n        \"pattern\": pattern,\n        \"glob\": raw_glob,\n        \"root\": str(search_root),\n        \"matches\": fallback[\"matches\"],\n        \"total_matches\": fallback[\"total_matches\"],\n        \"truncated\": fallback[\"total_matches\"] > len(fallback[\"matches\"]),\n    }\n    return {\n        \"tool\": \"tool_task_2\",\n        \"status\": \"ok\",\n        \"result\": json.dumps(payload, sort_keys=True),\n    }\n",
+      "code_hash": "65123e478e32240da7a4daabbb9b249b7e14085106390778a7f7eb95b224375e",
+      "contributors": [
+        "shared_tool_registry"
+      ],
+      "created_at": "2026-02-09T18:44:10.491871+00:00",
+      "description_samples": [
+        "summarizes findings for the user"
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "shared_registry",
+      "sample_input": {
+        "glob": "*.py",
+        "max_results": 10,
+        "pattern": "def\\s+[a-zA-Z_][a-zA-Z0-9_]*\\(",
+        "root": "."
+      },
+      "success_count": 1,
+      "tool_name": "tool_task_2",
+      "updated_at": "2026-02-09T18:44:10.491871+00:00"
+    }
+  ],
+  "version": 1
+}

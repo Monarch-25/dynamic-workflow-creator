@@ -4,11 +4,16 @@ Natural-language to WorkflowSpec generation agent.
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import Any, Optional, Protocol
 
 from pydantic import BaseModel
 
+from dwc.llm import (
+    DWC_BEDROCK_MODEL_ID,
+    build_chat_bedrock_converse as build_default_chat_bedrock_converse,
+)
 from dwc.ir.spec_schema import (
     EdgeSpec,
     InputSpec,
@@ -19,6 +24,8 @@ from dwc.ir.spec_schema import (
 )
 from dwc.ir.validators import validate_workflow_spec
 
+LOGGER = logging.getLogger(__name__)
+
 
 class LLMProtocol(Protocol):
     def invoke(self, prompt: Any, **kwargs: Any) -> Any:  # pragma: no cover - protocol only
@@ -27,7 +34,7 @@ class LLMProtocol(Protocol):
 
 class SpecGeneratorConfig(BaseModel):
     temperature: float = 0.0
-    model_id: str = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+    model_id: str = DWC_BEDROCK_MODEL_ID
 
 
 def _extract_json_block(raw: str) -> Optional[str]:
@@ -46,6 +53,8 @@ class SpecGeneratorAgent:
     ) -> None:
         self.llm = llm
         self.config = config or SpecGeneratorConfig()
+        if self.config.model_id != DWC_BEDROCK_MODEL_ID:
+            self.config.model_id = DWC_BEDROCK_MODEL_ID
 
     def generate(self, requirements_text: str, workflow_name: Optional[str] = None) -> WorkflowSpec:
         if self.llm is not None:
@@ -53,9 +62,8 @@ class SpecGeneratorAgent:
                 generated = self._generate_with_llm(requirements_text, workflow_name)
                 validate_workflow_spec(generated)
                 return generated
-            except Exception:
-                # Fall back to deterministic template spec.
-                pass
+            except Exception as exc:
+                LOGGER.warning("SpecGeneratorAgent fallback to heuristic spec: %s", exc)
         spec = self._heuristic_spec(requirements_text, workflow_name)
         validate_workflow_spec(spec)
         return spec
@@ -110,11 +118,18 @@ Requirements:
     ) -> WorkflowSpec:
         name = workflow_name or self._infer_name(requirements_text)
         description = requirements_text.strip().splitlines()[0][:200] or "Compiled workflow"
+        lower_req = requirements_text.lower()
+        needs_document = any(
+            token in lower_req
+            for token in ("document", "doc", "pdf", "docx", "extract code", "file")
+        )
 
         step_ingest = StepSpec(
             id="ingest_input",
             type="tool",
-            config={"tool_name": "passthrough"},
+            config={
+                "tool_name": "auto_document_loader" if needs_document else "passthrough"
+            },
             timeout_seconds=60,
         )
         step_llm = StepSpec(
@@ -140,11 +155,15 @@ Requirements:
             description=description,
             inputs=[
                 InputSpec(
-                    id="input_payload",
-                    name="input_payload",
-                    data_type="object",
+                    id="doc" if needs_document else "input_payload",
+                    name="doc" if needs_document else "input_payload",
+                    data_type="document" if needs_document else "object",
                     required=True,
-                    description="Input payload for workflow execution.",
+                    description=(
+                        "Document to process."
+                        if needs_document
+                        else "Input payload for workflow execution."
+                    ),
                 )
             ],
             outputs=[
@@ -169,11 +188,14 @@ Requirements:
         return slug[:48] or "compiled_workflow"
 
 
-def build_chat_bedrock_converse(model_id: str, region_name: Optional[str] = None) -> LLMProtocol:
+def build_chat_bedrock_converse(
+    model_id: Optional[str] = None, region_name: Optional[str] = None
+) -> LLMProtocol:
     """
     Factory for ChatBedrockConverse client.
     """
-
-    from langchain_aws import ChatBedrockConverse
-
-    return ChatBedrockConverse(model=model_id, temperature=0, region_name=region_name)
+    if model_id and model_id != DWC_BEDROCK_MODEL_ID:
+        raise ValueError(
+            f"DWC only supports model_id '{DWC_BEDROCK_MODEL_ID}'. Got: '{model_id}'."
+        )
+    return build_default_chat_bedrock_converse(region_name=region_name, temperature=0)

@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from dwc.compiler.dependency_resolver import DependencyResolver
 from dwc.ir.spec_schema import WorkflowSpec, model_dump_compat
 from dwc.ir.validators import validate_workflow_spec
+from dwc.llm import DWC_BEDROCK_MODEL_ID
 
 
 class ClarificationResult(BaseModel):
@@ -54,7 +55,7 @@ class ClarificationAgent:
                     step["config"]["temperature"] = 0
                     modified = True
                 if "model" not in step["config"]:
-                    step["config"]["model"] = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+                    step["config"]["model"] = DWC_BEDROCK_MODEL_ID
                     modified = True
 
             step["timeout_seconds"] = max(30, int(step.get("timeout_seconds", 30)))

@@ -1,0 +1,114 @@
+{
+  "constraints": null,
+  "description": "Build a workflow that can search python code with ripgrep and summarize matches.",
+  "edges": [
+    {
+      "condition": null,
+      "source": "task_1",
+      "target": "synthesize"
+    }
+  ],
+  "inputs": [
+    {
+      "data_type": "string",
+      "default": null,
+      "description": "Primary user question or request.",
+      "id": "query",
+      "name": "query",
+      "required": false
+    }
+  ],
+  "metadata": {
+    "approved_plan": "1. Parse requirements and lock the current task description in shared memory.\n2. Split the task into independent subtasks for tool construction.\n3. Build one tool function per subtask via tool-builder agents.\n4. Verify each tool in a venv with execution-based integrity checks.\n5. Iterate tool fixes until verifier passes or fallback tool is selected.\n6. Assemble a LangGraph workflow that runs subtasks and synthesizes results.\n7. Emit workflow folder with workflow.py, tools.py, README.md, and memory snapshot.\n8. Validate generated code and return user run instructions.",
+    "architecture_mode": "subtask_tool_arsenal",
+    "cost_estimate": {
+      "estimated_input_tokens": 50,
+      "estimated_output_tokens": 1024,
+      "estimated_total_usd": 0.01551,
+      "llm_steps": 1
+    },
+    "current_task_description": "User Requirements:\nBuild a workflow that can search python code with ripgrep and summarize matches.\n\nApproved Plan:\n1. Parse requirements and lock the current task description in shared memory.\n2. Split the task into independent subtasks for tool construction.\n3. Build one tool function per subtask via tool-builder agents.\n4. Verify each tool in a venv with execution-based integrity checks.\n5. Iterate tool fixes until verifier passes or fallback tool is selected.\n6. Assemble a LangGraph workflow that runs subtasks and synthesizes results.\n7. Emit workflow folder with workflow.py, tools.py, README.md, and memory snapshot.\n8. Validate generated code and return user run instructions.\n\nIntent Summary:\nBuild a general-purpose workflow generator from natural language requirements. User context: Build a workflow that can search python code with ripgrep and summarize matches. Execution path: 1. Parse requirements and lock the current task description in shared memory. 2. Split the task into independent subtasks for tool construction. 3. Build one tool function per subtask via tool-builder agents. 4. Verify each tool in a venv with execution-based integrity checks. 5. Iterate tool fix...\n",
+    "dependency": {
+      "roots": [
+        "task_1"
+      ],
+      "sinks": [
+        "synthesize"
+      ],
+      "topological_order": [
+        "task_1",
+        "synthesize"
+      ]
+    },
+    "intent_summary": "Build a general-purpose workflow generator from natural language requirements. User context: Build a workflow that can search python code with ripgrep and summarize matches. Execution path: 1. Parse requirements and lock the current task description in shared memory. 2. Split the task into independent subtasks for tool construction. 3. Build one tool function per subtask via tool-builder agents. 4. Verify each tool in a venv with execution-based integrity checks. 5. Iterate tool fix...",
+    "optimization_trace": [
+      "validate",
+      "normalize",
+      "dependency_resolve",
+      "dead_step_elimination",
+      "merge_compatible_steps",
+      "parallelization",
+      "retry_policy_injection",
+      "cost_estimation"
+    ],
+    "subtasks": [
+      {
+        "description": "Build a workflow that can search python code with ripgrep and summarize matches",
+        "id": "task_1",
+        "tool_name": "tool_task_1"
+      }
+    ],
+    "synthesis_prompt": "You are the synthesis head. Combine independent subtask outputs into one clear, direct plain-text answer for the user. Keep the answer coherent with the approved plan and user intent. Avoid JSON output.",
+    "tool_functions": {
+      "tool_task_1": {
+        "code": "import json\nimport re\nimport shutil\nimport subprocess\nfrom pathlib import Path\nfrom typing import Any, Dict, List\n\nEXCLUDED_DIR_NAMES = {\n    \".git\",\n    \".venv\",\n    \"venv\",\n    \"__pycache__\",\n    \".mypy_cache\",\n    \".pytest_cache\",\n}\n\nEXCLUDED_GLOBS = (\n    \"!**/.git/**\",\n    \"!**/.venv/**\",\n    \"!**/venv/**\",\n    \"!**/__pycache__/**\",\n    \"!**/.mypy_cache/**\",\n    \"!**/.pytest_cache/**\",\n)\n\n\ndef _is_within(root: Path, candidate: Path) -> bool:\n    try:\n        candidate.resolve().relative_to(root.resolve())\n        return True\n    except Exception:\n        return False\n\n\ndef _parse_rg_line(line: str) -> Dict[str, Any]:\n    parts = line.split(\":\", 3)\n    if len(parts) != 4:\n        return {}\n    path_s, line_s, column_s, preview = parts\n    try:\n        line_no = int(line_s)\n        column_no = int(column_s)\n    except ValueError:\n        return {}\n    return {\n        \"path\": path_s,\n        \"line\": line_no,\n        \"column\": column_no,\n        \"preview\": preview.strip(),\n    }\n\n\ndef _fallback_python_search(\n    *,\n    pattern: str,\n    glob_pattern: str,\n    search_root: Path,\n    workspace_root: Path,\n    max_results: int,\n) -> Dict[str, Any]:\n    try:\n        pattern_re = re.compile(pattern)\n    except re.error:\n        pattern_re = re.compile(re.escape(pattern))\n\n    try:\n        files = sorted(search_root.rglob(glob_pattern))\n    except Exception:\n        files = sorted(search_root.rglob(\"*.py\"))\n\n    matches: List[Dict[str, Any]] = []\n    total_matches = 0\n\n    for path in files:\n        if len(matches) >= max_results and total_matches > max_results:\n            break\n        if not path.is_file():\n            continue\n        if any(part in EXCLUDED_DIR_NAMES for part in path.parts):\n            continue\n        if not _is_within(workspace_root, path):\n            continue\n        try:\n            text = path.read_text(encoding=\"utf-8\", errors=\"ignore\")\n        except Exception:\n            continue\n        for line_no, line in enumerate(text.splitlines(), start=1):\n            for found in pattern_re.finditer(line):\n                total_matches += 1\n                if len(matches) >= max_results:\n                    continue\n                try:\n                    rel_path = str(path.resolve().relative_to(workspace_root.resolve()))\n                except Exception:\n                    rel_path = str(path)\n                matches.append(\n                    {\n                        \"path\": rel_path,\n                        \"line\": line_no,\n                        \"column\": int(found.start()) + 1,\n                        \"preview\": line.strip(),\n                    }\n                )\n    return {\n        \"matches\": matches,\n        \"total_matches\": total_matches,\n    }\n\n\ndef tool_task_1(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    raw_pattern = task_input.get(\"pattern\") or task_input.get(\"query\") or \"\"\n    pattern = str(raw_pattern).strip()\n    if not pattern:\n        payload = {\n            \"engine\": \"none\",\n            \"error\": \"Missing 'pattern' (or query) for code search.\",\n            \"matches\": [],\n            \"total_matches\": 0,\n        }\n        return {\n            \"tool\": \"tool_task_1\",\n            \"status\": \"ok\",\n            \"result\": json.dumps(payload, sort_keys=True),\n        }\n\n    raw_glob = str(task_input.get(\"glob\") or \"*.py\").strip() or \"*.py\"\n    max_results_raw = task_input.get(\"max_results\", 50)\n    try:\n        max_results = max(1, min(int(max_results_raw), 200))\n    except Exception:\n        max_results = 50\n\n    workspace_root = Path(str(task_input.get(\"workspace_root\") or \".\")).resolve()\n    raw_root = str(task_input.get(\"root\") or \".\").strip() or \".\"\n    root_path = Path(raw_root)\n    if root_path.is_absolute():\n        search_root = root_path.resolve()\n    else:\n        search_root = (workspace_root / root_path).resolve()\n\n    if not _is_within(workspace_root, search_root):\n        search_root = workspace_root\n\n    if not search_root.exists():\n        payload = {\n            \"engine\": \"none\",\n            \"error\": f\"Search root does not exist: {search_root}\",\n            \"matches\": [],\n            \"total_matches\": 0,\n        }\n        return {\n            \"tool\": \"tool_task_1\",\n            \"status\": \"ok\",\n            \"result\": json.dumps(payload, sort_keys=True),\n        }\n\n    rg_bin = shutil.which(\"rg\")\n    if rg_bin:\n        command = [\n            rg_bin,\n            \"--line-number\",\n            \"--column\",\n            \"--no-heading\",\n            \"--color\",\n            \"never\",\n            \"--glob\",\n            raw_glob,\n        ]\n        for glob_rule in EXCLUDED_GLOBS:\n            command.extend([\"--glob\", glob_rule])\n        command.extend([\"--\", pattern, str(search_root)])\n        completed = subprocess.run(\n            command,\n            capture_output=True,\n            text=True,\n            check=False,\n        )\n        if completed.returncode in (0, 1):\n            matches: List[Dict[str, Any]] = []\n            total_matches = 0\n            for raw_line in completed.stdout.splitlines():\n                row = _parse_rg_line(raw_line)\n                if not row:\n                    continue\n                total_matches += 1\n                if len(matches) >= max_results:\n                    continue\n                full_path = Path(str(row[\"path\"])).resolve()\n                if not _is_within(workspace_root, full_path):\n                    continue\n                try:\n                    row[\"path\"] = str(full_path.relative_to(workspace_root))\n                except Exception:\n                    row[\"path\"] = str(full_path)\n                matches.append(row)\n            payload = {\n                \"engine\": \"rg\",\n                \"pattern\": pattern,\n                \"glob\": raw_glob,\n                \"root\": str(search_root),\n                \"matches\": matches,\n                \"total_matches\": total_matches,\n                \"truncated\": total_matches > len(matches),\n            }\n            return {\n                \"tool\": \"tool_task_1\",\n                \"status\": \"ok\",\n                \"result\": json.dumps(payload, sort_keys=True),\n            }\n\n    fallback = _fallback_python_search(\n        pattern=pattern,\n        glob_pattern=raw_glob,\n        search_root=search_root,\n        workspace_root=workspace_root,\n        max_results=max_results,\n    )\n    payload = {\n        \"engine\": \"python_fallback\",\n        \"pattern\": pattern,\n        \"glob\": raw_glob,\n        \"root\": str(search_root),\n        \"matches\": fallback[\"matches\"],\n        \"total_matches\": fallback[\"total_matches\"],\n        \"truncated\": fallback[\"total_matches\"] > len(fallback[\"matches\"]),\n    }\n    return {\n        \"tool\": \"tool_task_1\",\n        \"status\": \"ok\",\n        \"result\": json.dumps(payload, sort_keys=True),\n    }\n",
+        "description": "Build a workflow that can search python code with ripgrep and summarize matches"
+      }
+    }
+  },
+  "name": "cli_approval_check",
+  "outputs": [
+    {
+      "data_type": "string",
+      "description": "Final plain-text answer.",
+      "id": "final_answer",
+      "name": "final_answer",
+      "source_step": "synthesize"
+    }
+  ],
+  "steps": [
+    {
+      "config": {
+        "max_output_tokens": 1024,
+        "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+        "prompt": "You are the synthesis head. Combine independent subtask outputs into one clear, direct plain-text answer for the user. Keep the answer coherent with the approved plan and user intent. Avoid JSON output.",
+        "temperature": 0
+      },
+      "id": "synthesize",
+      "retry_policy": {
+        "backoff_strategy": "exponential",
+        "initial_delay_seconds": 1.0,
+        "max_delay_seconds": 30.0,
+        "max_retries": 2
+      },
+      "timeout_seconds": 120,
+      "type": "llm"
+    },
+    {
+      "config": {
+        "subtask_description": "Build a workflow that can search python code with ripgrep and summarize matches",
+        "tool_name": "tool_task_1"
+      },
+      "id": "task_1",
+      "retry_policy": {
+        "backoff_strategy": "exponential",
+        "initial_delay_seconds": 1.0,
+        "max_delay_seconds": 30.0,
+        "max_retries": 2
+      },
+      "timeout_seconds": 120,
+      "type": "tool"
+    }
+  ],
+  "version": "1.0.0"
+}

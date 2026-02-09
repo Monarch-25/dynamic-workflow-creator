@@ -20,8 +20,10 @@ except ImportError:  # pragma: no cover
 class CompileRequest(BaseModel):
     requirements: str
     workflow_name: Optional[str] = None
+    approved_plan: Optional[str] = None
+    intent_summary: Optional[str] = None
     execute: bool = True
-    max_reflections: int = Field(default=5, ge=1, le=20)
+    max_tool_iterations: int = Field(default=4, ge=1, le=20)
     initial_state: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -43,8 +45,10 @@ if APIRouter is not None:
             artifact = compiler.compile_from_nl(
                 requirements_text=payload.requirements,
                 workflow_name=payload.workflow_name,
+                approved_plan=payload.approved_plan,
+                intent_summary=payload.intent_summary,
                 execute=payload.execute,
-                max_reflections=payload.max_reflections,
+                max_tool_iterations=payload.max_tool_iterations,
                 initial_state=payload.initial_state,
             )
             response = (
