@@ -46,7 +46,33 @@ python3 -m dwc.main --requirements "..." --todo-stream
 ```
 
 The persisted checklist is written to:
-- `.dwc/memory_md/agents/todo_board.md`
+- `.dwc/sessions/<session_id>/memory_md/agents/todo_board.md` (default isolated mode)
+
+## Session Storage
+
+By default, DWC isolates traces per session while keeping shared tools global:
+
+```bash
+python3 -m dwc.main \
+  --requirements "..." \
+  --session-mode isolated \
+  --session-id my_session_01
+```
+
+- Session-local traces:
+  - `.dwc/sessions/<session_id>/memory_md/`
+  - `.dwc/sessions/<session_id>/memory/history.db`
+  - `.dwc/sessions/<session_id>/memory/vector_store.jsonl`
+  - `.dwc/sessions/<session_id>/telemetry/`
+  - `.dwc/sessions/<session_id>/sandboxes/`
+- Shared across sessions:
+  - `.dwc/shared/tools/shared_tool_registry.json`
+
+To use legacy global trace behavior:
+
+```bash
+python3 -m dwc.main --requirements "..." --session-mode shared
+```
 
 ## Generated Workflow Run
 

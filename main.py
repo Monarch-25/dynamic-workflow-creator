@@ -35,9 +35,16 @@ from dwc.llm import build_chat_bedrock_converse
 from dwc.memory.agent_todo_board import AgentTodoBoard
 from dwc.memory.history_store import HistoryStore
 from dwc.memory.markdown_memory import MarkdownMemoryStore
+from dwc.memory.session_paths import (
+    SessionPaths,
+    migrate_legacy_shared_tool_registry,
+    resolve_session_paths,
+)
 from dwc.memory.shared_tool_registry import SharedToolRegistry
 from dwc.memory.vector_store import LocalVectorStore
 from dwc.runtime.executor import WorkflowExecutor
+from dwc.runtime.sandbox import SandboxConfig, VenvSandbox
+from dwc.runtime.telemetry import TelemetryCollector
 from dwc.services import ExecutionService, PlanningService, SpecService, ToolingService
 
 LOGGER = logging.getLogger(__name__)
@@ -64,6 +71,8 @@ class CompilationArtifact(BaseModel):
     execution_report: Optional[Dict[str, Any]] = None
     stable: bool = False
     stability: Dict[str, Any] = Field(default_factory=dict)
+    session_mode: str = "isolated"
+    session_id: str = "unknown"
 
 
 class DynamicWorkflowCompiler:
@@ -72,29 +81,56 @@ class DynamicWorkflowCompiler:
         llm: Optional[LLMProtocol] = None,
         *,
         todo_stream: Optional[bool] = None,
+        session_mode: str = "isolated",
+        session_id: Optional[str] = None,
+        dwc_root: str = ".dwc",
     ) -> None:
         resolved_llm = llm or self._build_default_llm()
         self.llm = resolved_llm
+        self.session_paths: SessionPaths = resolve_session_paths(
+            dwc_root=dwc_root,
+            session_mode=session_mode,
+            session_id=session_id,
+        )
+        migrate_legacy_shared_tool_registry(self.session_paths)
         self.planner = PlannerAgent(llm=resolved_llm)
         self.subtask_agent = SubtaskAgent(llm=resolved_llm)
         self.tool_builder = ToolBuilderAgent(llm=resolved_llm)
-        self.tool_verifier = ToolVerifierAgent()
+        verifier_sandbox = VenvSandbox(
+            SandboxConfig(
+                root_dir=str(self.session_paths.sandboxes_dir),
+                timeout_seconds=60,
+                preserve_session=False,
+            )
+        )
+        self.tool_verifier = ToolVerifierAgent(sandbox=verifier_sandbox)
         self.synthesis_agent = SynthesisAgent(llm=resolved_llm)
 
         self.optimizer = OptimizerAgent()
         self.codegen = CodegenAgent()
-        self.executor = WorkflowExecutor()
+        self.executor = WorkflowExecutor(
+            sandbox=VenvSandbox(
+                SandboxConfig(
+                    root_dir=str(self.session_paths.sandboxes_dir),
+                    timeout_seconds=180,
+                    preserve_session=False,
+                )
+            ),
+            telemetry=TelemetryCollector(root_dir=str(self.session_paths.telemetry_dir)),
+        )
         self.evaluator = EvaluationAgent()
         self.versioning = WorkflowVersionManager()
 
-        self.vector_store = LocalVectorStore()
-        self.history_store = HistoryStore()
-        self.memory_store = MarkdownMemoryStore()
+        self.vector_store = LocalVectorStore(path=str(self.session_paths.vector_store_path))
+        self.history_store = HistoryStore(db_path=str(self.session_paths.history_db_path))
+        self.memory_store = MarkdownMemoryStore(root_dir=str(self.session_paths.memory_md_dir))
         self.todo_board = AgentTodoBoard(
             root_dir=str(self.memory_store.root_dir),
             emit_console=todo_stream,
         )
-        self.shared_tool_registry = SharedToolRegistry()
+        self.shared_tool_registry = SharedToolRegistry(
+            path=str(self.session_paths.shared_tool_registry_path)
+        )
 
         self.planning_service = PlanningService(
             self.planner,
@@ -388,6 +424,8 @@ class DynamicWorkflowCompiler:
                 if hasattr(stability, "model_dump")
                 else stability.dict()
             ),
+            session_mode=self.session_paths.session_mode,
+            session_id=self.session_paths.session_id,
         )
 
         self.history_store.add_record(
@@ -426,6 +464,7 @@ def _render_artifact_summary(artifact: CompilationArtifact) -> str:
     lines = [
         f"Workflow '{artifact.workflow_name}' compiled.",
         f"Version: {artifact.version}",
+        f"Session: {artifact.session_mode}:{artifact.session_id}",
         f"Folder: {artifact.workflow_dir or '-'}",
         f"Runbook: {artifact.workflow_runbook_path or '-'}",
         f"Entrypoint: python {artifact.generated_script_path}",
@@ -462,6 +501,12 @@ def _render_home_screen() -> str:
         "  - Live [todo] progress lines show agent completion checks during compile.",
         "  - Force progress stream: --todo-stream or disable with --no-todo-stream.",
         "",
+        "Session storage:",
+        "  - Default: --session-mode isolated (per-session traces under .dwc/sessions/<id>/...).",
+        "  - Shared tool registry stays global at .dwc/shared/tools/shared_tool_registry.json.",
+        "  - Use --session-id to reuse an isolated session across multiple requests.",
+        "  - Use --session-mode shared for legacy global trace behavior.",
+        "",
         "Input options for execution payload:",
         "  - --input-json '<json>'",
         "  - --input-file /path/to/payload.json",
@@ -489,6 +534,25 @@ def main() -> None:
     parser.add_argument("--no-home-screen", action="store_true")
     parser.add_argument("--todo-stream", action="store_true")
     parser.add_argument("--no-todo-stream", action="store_true")
+    parser.add_argument(
+        "--session-mode",
+        type=str,
+        choices=["isolated", "shared"],
+        default="isolated",
+        help="Memory mode: isolated stores traces per session; shared uses legacy global paths.",
+    )
+    parser.add_argument(
+        "--session-id",
+        type=str,
+        default=None,
+        help="Session identifier for isolated mode (auto-generated if omitted).",
+    )
+    parser.add_argument(
+        "--dwc-root",
+        type=str,
+        default=".dwc",
+        help="Root directory for DWC state and generated artifacts metadata.",
+    )
     args = parser.parse_args()
 
     if args.todo_stream and args.no_todo_stream:
@@ -503,7 +567,12 @@ def main() -> None:
     elif args.no_todo_stream:
         todo_stream = False
 
-    compiler = DynamicWorkflowCompiler(todo_stream=todo_stream)
+    compiler = DynamicWorkflowCompiler(
+        todo_stream=todo_stream,
+        session_mode=args.session_mode,
+        session_id=args.session_id,
+        dwc_root=args.dwc_root,
+    )
     initial_state = _load_input_payload(args.input_json, args.input_file)
 
     plan_mode_requested = args.plan_mode or (

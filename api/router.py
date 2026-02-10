@@ -25,6 +25,9 @@ class CompileRequest(BaseModel):
     execute: bool = True
     max_tool_iterations: int = Field(default=4, ge=1, le=20)
     initial_state: Dict[str, Any] = Field(default_factory=dict)
+    session_mode: str = Field(default="isolated", pattern="^(isolated|shared)$")
+    session_id: Optional[str] = None
+    dwc_root: str = ".dwc"
 
 
 class CompileResponse(BaseModel):
@@ -33,7 +36,6 @@ class CompileResponse(BaseModel):
 
 if APIRouter is not None:
     router = APIRouter(prefix="/dwc", tags=["dwc"])
-    compiler = DynamicWorkflowCompiler()
 
     @router.get("/health")
     def health() -> Dict[str, str]:
@@ -42,6 +44,11 @@ if APIRouter is not None:
     @router.post("/compile", response_model=CompileResponse)
     def compile_workflow(payload: CompileRequest) -> CompileResponse:
         try:
+            compiler = DynamicWorkflowCompiler(
+                session_mode=payload.session_mode,
+                session_id=payload.session_id,
+                dwc_root=payload.dwc_root,
+            )
             artifact = compiler.compile_from_nl(
                 requirements_text=payload.requirements,
                 workflow_name=payload.workflow_name,
