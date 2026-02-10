@@ -102,6 +102,7 @@ class VenvSandbox:
     ) -> None:
         if not requirements:
             return
+        self._ensure_session_ready(session)
         command = [
             str(session.pip_bin),
             "install",
@@ -126,6 +127,7 @@ class VenvSandbox:
         input_payload: Optional[Dict[str, Any]] = None,
         timeout_seconds: Optional[int] = None,
     ) -> SandboxExecutionResult:
+        self._ensure_session_ready(session)
         command = [str(session.python_bin), script_path]
         if script_args:
             command.extend(script_args)
@@ -170,6 +172,22 @@ class VenvSandbox:
                 stderr=(exc.stderr or "") + "\nTimeoutExpired",
                 duration_ms=duration_ms,
                 memory_kb=max(0, rss_after - rss_before),
+            )
+
+    def _ensure_session_ready(self, session: SandboxSession) -> None:
+        if session.python_bin.exists() and session.pip_bin.exists():
+            return
+        session.root_dir.mkdir(parents=True, exist_ok=True)
+        subprocess.run(
+            [self.config.base_python, "-m", "venv", str(session.venv_dir)],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        if not session.python_bin.exists():
+            raise FileNotFoundError(
+                f"Sandbox python binary missing after venv repair: {session.python_bin}"
             )
 
     def cleanup(self, session: SandboxSession) -> None:

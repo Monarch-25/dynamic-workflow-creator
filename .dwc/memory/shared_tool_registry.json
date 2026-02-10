@@ -1,6 +1,887 @@
 {
   "entries": [
     {
+      "code": "from typing import Any, Dict\n\ndef tool_testing_deployment(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = (\n        task_input.get(\"doc\")\n        or task_input.get(\"text\")\n        or task_input.get(\"query\")\n        or str(task_input)\n    )\n    cleaned = \" \".join(str(value).split()).strip()\n    if not cleaned:\n        cleaned = \"Write unit/integration tests, documentation, and package the compiler with CI pipelines.\"\n    result = (\"Fallback output for: \" + \"Write unit/integration tests, documentation, and package the compiler with CI pipelines.\" + \". \" + cleaned)[:900]\n    return {\n        \"tool\": \"tool_testing_deployment\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "c6056a227cf61e6eb3626de9627c49fa4c2f78395de0b155d45cdbf11c0d35ec",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:fallback"
+      ],
+      "created_at": "2026-02-09T21:16:15.495185+00:00",
+      "description_samples": [
+        "Write unit/integration tests, documentation, and package the compiler with CI pipelines."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "fallback",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_testing_deployment",
+      "updated_at": "2026-02-09T21:16:15.495185+00:00"
+    },
+    {
+      "code": "import datetime\nfrom typing import Dict, Any, Optional\n\ndef safe_cli(command: str, user_message: Optional[str] = None) -> str:\n    # Placeholder implementation; in real environment this would invoke a safe CLI.\n    return \"\"\n\ndef tool_testing_deployment(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    # Determine tool name; default if not provided.\n    tool_name = task_input.get(\"tool\", \"datetime_tool\")\n    try:\n        iso_dt = datetime.datetime.now().astimezone().isoformat()\n        explanation = \"Current local date and time in ISO 8601 format.\"\n        result = f\"{iso_dt} \u2013 {explanation}\"\n        status = \"success\"\n    except Exception as e:\n        result = str(e)\n        status = \"error\"\n    return {\"tool\": tool_name, \"status\": status, \"result\": result}\n",
+      "code_hash": "386831ee551987e8e6cea900d5cb8d95692dd4ddafb5a92573f44b2222ba0229",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:16:13.800568+00:00",
+      "description_samples": [
+        "Write unit/integration tests, documentation, and package the compiler with CI pipelines."
+      ],
+      "failure_count": 1,
+      "last_error": "Traceback (most recent call last):\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-0eaaf304a307/verify_tool.py\", line 120, in <module>\n    _assert_contract(first)\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-0eaaf304a307/verify_tool.py\", line 44, in _assert_contract\n    raise ValueError(\nValueError: Tool output 'tool' field must match function name 'tool_testing_deployment'.",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_testing_deployment",
+      "updated_at": "2026-02-09T21:16:13.800568+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_cli_assembly(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = (\n        task_input.get(\"doc\")\n        or task_input.get(\"text\")\n        or task_input.get(\"query\")\n        or str(task_input)\n    )\n    cleaned = \" \".join(str(value).split()).strip()\n    if not cleaned:\n        cleaned = \"Create a CLI that accepts workflow files and emits compiled artifacts.\"\n    result = (\"Fallback output for: \" + \"Create a CLI that accepts workflow files and emits compiled artifacts.\" + \". \" + cleaned)[:900]\n    return {\n        \"tool\": \"tool_cli_assembly\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "e38c0bf6f0916722a1d56c1575e45ff2bc9eb2235d9afff15fff514fb27d70e6",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:fallback"
+      ],
+      "created_at": "2026-02-09T21:16:07.757566+00:00",
+      "description_samples": [
+        "Create a CLI that accepts workflow files and emits compiled artifacts."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "fallback",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_cli_assembly",
+      "updated_at": "2026-02-09T21:16:07.757566+00:00"
+    },
+    {
+      "code": "from datetime import datetime\nfrom typing import Dict, Any, Optional\n\ndef safe_cli(command: str, user_message: Optional[str] = None) -> str:\n    # Placeholder for the provided safe_cli function.\n    return \"\"\n\ndef tool_cli_assembly(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    now_iso = datetime.now().astimezone().isoformat()\n    explanation = \"Current local date and time in ISO 8601 format.\"\n    result = f\"{now_iso} \u2013 {explanation}\"\n    return {\"tool\": \"cli_assembly\", \"status\": \"success\", \"result\": result}\n",
+      "code_hash": "9e2fe5452761fccb549e53d4dd634deb814299ddf6a8d08859aae62f2ba437e2",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:16:06.108851+00:00",
+      "description_samples": [
+        "Create a CLI that accepts workflow files and emits compiled artifacts."
+      ],
+      "failure_count": 1,
+      "last_error": "Traceback (most recent call last):\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-a99e8e06ffe6/verify_tool.py\", line 120, in <module>\n    _assert_contract(first)\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-a99e8e06ffe6/verify_tool.py\", line 44, in _assert_contract\n    raise ValueError(\nValueError: Tool output 'tool' field must match function name 'tool_cli_assembly'.",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_cli_assembly",
+      "updated_at": "2026-02-09T21:16:06.108851+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_optimization_passes(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = (\n        task_input.get(\"doc\")\n        or task_input.get(\"text\")\n        or task_input.get(\"query\")\n        or str(task_input)\n    )\n    cleaned = \" \".join(str(value).split()).strip()\n    if not cleaned:\n        cleaned = \"Add passes like dead\\u2011code elimination and parallelism extraction.\"\n    result = (\"Fallback output for: \" + \"Add passes like dead\\u2011code elimination and parallelism extraction.\" + \". \" + cleaned)[:900]\n    return {\n        \"tool\": \"tool_optimization_passes\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "37cbfebd16bdca71c8241ab5bb2d440bf11313a631fb5082a9a4e6fe29585e3b",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:fallback"
+      ],
+      "created_at": "2026-02-09T21:16:00.412147+00:00",
+      "description_samples": [
+        "Add passes like dead\u2011code elimination and parallelism extraction."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "fallback",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_optimization_passes",
+      "updated_at": "2026-02-09T21:16:00.412147+00:00"
+    },
+    {
+      "code": "from datetime import datetime\nfrom typing import Dict, Any, Optional\n\ndef safe_cli(command: str, user_message: Optional[str] = None) -> str:\n    # Placeholder for a safe CLI call; returns empty string for this implementation.\n    return \"\"\n\ndef tool_optimization_passes(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    # Obtain the current local date and time in ISO 8601 format.\n    now_iso = datetime.now().astimezone().isoformat()\n    explanation = \"Current local date and time in ISO 8601 format.\"\n    result = f\"{now_iso} \u2013 {explanation}\"\n    return {\"tool\": \"optimization_passes\", \"status\": \"success\", \"result\": result}\n",
+      "code_hash": "8dbd53fecb9175b96a9572ee4ff75e3d8bf49e68c1cd9f3135ed83f54a16cc89",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:15:58.748695+00:00",
+      "description_samples": [
+        "Add passes like dead\u2011code elimination and parallelism extraction."
+      ],
+      "failure_count": 1,
+      "last_error": "Traceback (most recent call last):\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-4c355e880879/verify_tool.py\", line 120, in <module>\n    _assert_contract(first)\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-4c355e880879/verify_tool.py\", line 44, in _assert_contract\n    raise ValueError(\nValueError: Tool output 'tool' field must match function name 'tool_optimization_passes'.",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_optimization_passes",
+      "updated_at": "2026-02-09T21:15:58.748695+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_codegen_modules(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = (\n        task_input.get(\"doc\")\n        or task_input.get(\"text\")\n        or task_input.get(\"query\")\n        or str(task_input)\n    )\n    cleaned = \" \".join(str(value).split()).strip()\n    if not cleaned:\n        cleaned = \"Generate code for target platforms such as Docker, Kubernetes, and serverless.\"\n    result = (\"Fallback output for: \" + \"Generate code for target platforms such as Docker, Kubernetes, and serverless.\" + \". \" + cleaned)[:900]\n    return {\n        \"tool\": \"tool_codegen_modules\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "f269f13c3a6186b35ae767ff42fc42a6087229a79d78b6b82b4783ffce6fcf67",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:fallback"
+      ],
+      "created_at": "2026-02-09T21:15:52.028229+00:00",
+      "description_samples": [
+        "Generate code for target platforms such as Docker, Kubernetes, and serverless."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "fallback",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_codegen_modules",
+      "updated_at": "2026-02-09T21:15:52.028229+00:00"
+    },
+    {
+      "code": "import datetime\nfrom typing import Dict, Any\n\ndef tool_codegen_modules(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    # Prepare a deterministic result: current local datetime in ISO 8601 format\n    now_iso = datetime.datetime.now().isoformat()\n    explanation = \"Current local date and time in ISO 8601 format.\"\n    result_str = f\"{now_iso} \u2013 {explanation}\"\n    return {\n        \"tool\": \"tool_codegen_modules\",\n        \"status\": \"success\",\n        \"result\": result_str\n    }\n",
+      "code_hash": "2790f0510e87227f5c0cd7051b71a8f9cb3e76e68a752cc0a4a333c7111e2f5d",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:15:50.371388+00:00",
+      "description_samples": [
+        "Generate code for target platforms such as Docker, Kubernetes, and serverless."
+      ],
+      "failure_count": 1,
+      "last_error": "Traceback (most recent call last):\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-22fccb39b5c3/verify_tool.py\", line 126, in <module>\n    raise ValueError(\"Tool output is non-deterministic for identical input.\")\nValueError: Tool output is non-deterministic for identical input.",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_codegen_modules",
+      "updated_at": "2026-02-09T21:15:50.371388+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_type_check_validation(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = (\n        task_input.get(\"doc\")\n        or task_input.get(\"text\")\n        or task_input.get(\"query\")\n        or str(task_input)\n    )\n    cleaned = \" \".join(str(value).split()).strip()\n    if not cleaned:\n        cleaned = \"Add a type\\u2011checking and validation pass over the IR.\"\n    result = (\"Fallback output for: \" + \"Add a type\\u2011checking and validation pass over the IR.\" + \". \" + cleaned)[:900]\n    return {\n        \"tool\": \"tool_type_check_validation\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "4f50dee6cfe2b1c1593f071819f102ac766ceaea58bec8e2c4ebd7fb7260db0c",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:fallback"
+      ],
+      "created_at": "2026-02-09T21:15:44.010822+00:00",
+      "description_samples": [
+        "Add a type\u2011checking and validation pass over the IR."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "fallback",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_type_check_validation",
+      "updated_at": "2026-02-09T21:15:44.010822+00:00"
+    },
+    {
+      "code": "from datetime import datetime\nfrom typing import Dict, Any\n\ndef tool_type_check_validation(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    out = {\"tool\": \"type_check_validation\", \"status\": \"success\", \"result\": \"\"}\n    ir = task_input.get(\"ir\")\n    if ir is not None:\n        if not isinstance(ir, dict):\n            out[\"status\"] = \"error\"\n            out[\"result\"] = \"IR must be a dictionary.\"\n            return out\n        for name, node in ir.items():\n            if not isinstance(node, dict):\n                out[\"status\"] = \"error\"\n                out[\"result\"] = f\"IR node '{name}' must be a dictionary.\"\n                return out\n            if \"type\" not in node:\n                out[\"status\"] = \"error\"\n                out[\"result\"] = f\"IR node '{name}' missing required 'type' field.\"\n                return out\n    now_iso = datetime.now().astimezone().isoformat()\n    out[\"result\"] = f\"{now_iso} \u2013 Current local date and time in ISO 8601 format.\"\n    return out\n",
+      "code_hash": "a30f70015d34d6f1105457c6919bc25a9e394a0f9caeeb8aff1226bb28932a65",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:15:42.358432+00:00",
+      "description_samples": [
+        "Add a type\u2011checking and validation pass over the IR."
+      ],
+      "failure_count": 1,
+      "last_error": "Traceback (most recent call last):\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-6bd2cee7d92e/verify_tool.py\", line 120, in <module>\n    _assert_contract(first)\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-6bd2cee7d92e/verify_tool.py\", line 44, in _assert_contract\n    raise ValueError(\nValueError: Tool output 'tool' field must match function name 'tool_type_check_validation'.",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_type_check_validation",
+      "updated_at": "2026-02-09T21:15:42.358432+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_implement_parser(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = (\n        task_input.get(\"doc\")\n        or task_input.get(\"text\")\n        or task_input.get(\"query\")\n        or str(task_input)\n    )\n    cleaned = \" \".join(str(value).split()).strip()\n    if not cleaned:\n        cleaned = \"Build a parser that translates source scripts into the IR.\"\n    result = (\"Fallback output for: \" + \"Build a parser that translates source scripts into the IR.\" + \". \" + cleaned)[:900]\n    return {\n        \"tool\": \"tool_implement_parser\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "c6b5b4d8f73428eed99b10c6006c31bdb564ccd4d734370c55a82285ed284ad7",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:fallback"
+      ],
+      "created_at": "2026-02-09T21:15:35.850940+00:00",
+      "description_samples": [
+        "Build a parser that translates source scripts into the IR."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "fallback",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_implement_parser",
+      "updated_at": "2026-02-09T21:15:35.850940+00:00"
+    },
+    {
+      "code": "from datetime import datetime\n\ndef tool_implement_parser(task_input):\n    now = datetime.now().astimezone()\n    iso = now.isoformat()\n    explanation = \"Current local date and time in ISO 8601 format.\"\n    result = f\"{iso} \u2013 {explanation}\"\n    return {\"tool\": \"date_time\", \"status\": \"success\", \"result\": result}\n",
+      "code_hash": "d3518ea52002c4d46f04da83e998844ea21ffff210104d8716d0aa45eeb8a7f5",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:15:34.185506+00:00",
+      "description_samples": [
+        "Build a parser that translates source scripts into the IR."
+      ],
+      "failure_count": 1,
+      "last_error": "Traceback (most recent call last):\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-fbf6a4b8f708/verify_tool.py\", line 120, in <module>\n    _assert_contract(first)\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-fbf6a4b8f708/verify_tool.py\", line 44, in _assert_contract\n    raise ValueError(\nValueError: Tool output 'tool' field must match function name 'tool_implement_parser'.",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_implement_parser",
+      "updated_at": "2026-02-09T21:15:34.185506+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_design_ir(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = (\n        task_input.get(\"doc\")\n        or task_input.get(\"text\")\n        or task_input.get(\"query\")\n        or str(task_input)\n    )\n    cleaned = \" \".join(str(value).split()).strip()\n    if not cleaned:\n        cleaned = \"Create an IR that captures all workflow constructs.\"\n    result = (\"Fallback output for: \" + \"Create an IR that captures all workflow constructs.\" + \". \" + cleaned)[:900]\n    return {\n        \"tool\": \"tool_design_ir\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "9d2511d7dea3c5023eacf3e24a5a6552a93233fc6e85d44e32c41266962035b0",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:fallback"
+      ],
+      "created_at": "2026-02-09T21:15:28.866061+00:00",
+      "description_samples": [
+        "Create an IR that captures all workflow constructs."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "fallback",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_design_ir",
+      "updated_at": "2026-02-09T21:15:28.866061+00:00"
+    },
+    {
+      "code": "import datetime\nfrom typing import Dict, Any\n\ndef tool_design_ir(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    now = datetime.datetime.now().isoformat()\n    explanation = \"Current local date and time in ISO 8601 format.\"\n    result = f\"{now} \u2013 {explanation}\"\n    return {\"tool\": \"tool_design_ir\", \"status\": \"success\", \"result\": result}\n",
+      "code_hash": "40eaff1ff597dafd1c42120476ebce743202481f62de7e24c70109e2e4d41008",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:15:27.169505+00:00",
+      "description_samples": [
+        "Create an IR that captures all workflow constructs."
+      ],
+      "failure_count": 1,
+      "last_error": "Traceback (most recent call last):\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-2fa3dea0ae26/verify_tool.py\", line 126, in <module>\n    raise ValueError(\"Tool output is non-deterministic for identical input.\")\nValueError: Tool output is non-deterministic for identical input.",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_design_ir",
+      "updated_at": "2026-02-09T21:15:27.169505+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_gather_workflow_grammar(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = (\n        task_input.get(\"doc\")\n        or task_input.get(\"text\")\n        or task_input.get(\"query\")\n        or str(task_input)\n    )\n    cleaned = \" \".join(str(value).split()).strip()\n    if not cleaned:\n        cleaned = \"Collect and document the workflow language grammar and semantics.\"\n    result = (\"Fallback output for: \" + \"Collect and document the workflow language grammar and semantics.\" + \". \" + cleaned)[:900]\n    return {\n        \"tool\": \"tool_gather_workflow_grammar\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "efcd8d1d24f1e9ae965f3cbde14d4b46412d14a985cbe69a539db0eb9202f761",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:fallback"
+      ],
+      "created_at": "2026-02-09T21:15:20.626971+00:00",
+      "description_samples": [
+        "Collect and document the workflow language grammar and semantics."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "fallback",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_gather_workflow_grammar",
+      "updated_at": "2026-02-09T21:15:20.626971+00:00"
+    },
+    {
+      "code": "import datetime\nfrom typing import Any, Dict, Optional\n\ndef safe_cli(command: str, user_message: Optional[str] = None) -> str:\n    # Placeholder implementation; in real environment this would execute safely.\n    return \"\"\n\ndef tool_gather_workflow_grammar(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    iso_dt = datetime.datetime.now(datetime.timezone.utc).astimezone().isoformat()\n    explanation = \"Current local date and time in ISO 8601 format.\"\n    return {\n        \"tool\": \"tool_gather_workflow_grammar\",\n        \"status\": \"success\",\n        \"result\": {\n            \"datetime\": iso_dt,\n            \"explanation\": explanation\n        }\n    }\n",
+      "code_hash": "3d23b1a51dc31e1507ac96133ae45f07d1e1a1efb6cf60c89954879ce4632696",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:15:18.965436+00:00",
+      "description_samples": [
+        "Collect and document the workflow language grammar and semantics."
+      ],
+      "failure_count": 1,
+      "last_error": "Traceback (most recent call last):\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-91b9e7b4922a/verify_tool.py\", line 126, in <module>\n    raise ValueError(\"Tool output is non-deterministic for identical input.\")\nValueError: Tool output is non-deterministic for identical input.",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_gather_workflow_grammar",
+      "updated_at": "2026-02-09T21:15:18.965436+00:00"
+    },
+    {
+      "code": "import datetime\nfrom typing import Dict, Any, Optional\n\ndef safe_cli(command: str, user_message: Optional[str] = None) -> str:\n    # Placeholder implementation; in real environment this would run a safe command.\n    return f\"Executed: {command}\"\n\ndef tool_deploy_compiler_and_document(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    try:\n        now_iso = datetime.datetime.now().isoformat(timespec='seconds')\n        explanation = \"Current local date and time in ISO format.\"\n        result = f\"{now_iso} - {explanation}\"\n        return {\"tool\": \"tool_deploy_compiler_and_document\", \"status\": \"success\", \"result\": result}\n    except Exception as e:\n        return {\"tool\": \"tool_deploy_compiler_and_document\", \"status\": \"error\", \"result\": str(e)}\n",
+      "code_hash": "7a33cb4da5a2593d0e5c667b076817afbe77922ca6ec4bc0ea719452f17f5f63",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:12:17.564207+00:00",
+      "description_samples": [
+        "Deploy the compiler with documentation and monitor user feedback."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_deploy_compiler_and_document",
+      "updated_at": "2026-02-09T21:12:17.564207+00:00"
+    },
+    {
+      "code": "from datetime import datetime\nfrom typing import Dict, Any, Optional\n\ndef safe_cli(command: str, user_message: Optional[str] = None) -> str:\n    # Placeholder implementation; in real environment this would run a safe CLI command.\n    return \"\"\n\ndef tool_create_validation_testing_suites(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    now_iso = datetime.now().isoformat(timespec='seconds')\n    explanation = \"current local date and time in ISO format\"\n    result = f\"{now_iso} - {explanation}\"\n    return {\n        \"tool\": \"tool_create_validation_testing_suites\",\n        \"status\": \"success\",\n        \"result\": result\n    }\n",
+      "code_hash": "0af7090a34e589befd97e5c4233a4027935d3da4cb0e7e48b1b5155c2be3c3b0",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:12:10.725942+00:00",
+      "description_samples": [
+        "Develop validation and testing suites to ensure correct compilation."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_create_validation_testing_suites",
+      "updated_at": "2026-02-09T21:12:10.725942+00:00"
+    },
+    {
+      "code": "import datetime\nfrom typing import Any, Dict\n\ndef tool_develop_codegen_backends(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    now = datetime.datetime.now().isoformat(timespec='seconds')\n    explanation = \"Current local date and time in ISO 8601 format.\"\n    result = f\"{now} \u2013 {explanation}\"\n    return {\n        \"tool\": \"tool_develop_codegen_backends\",\n        \"status\": \"success\",\n        \"result\": result\n    }\n",
+      "code_hash": "3248e783193ae4487311fda6acba768409d825f08206e07ba0b4594ff446a442",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:12:04.781867+00:00",
+      "description_samples": [
+        "Create code generation back\u2011ends for target execution environments."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_develop_codegen_backends",
+      "updated_at": "2026-02-09T21:12:04.781867+00:00"
+    },
+    {
+      "code": "import datetime\nfrom typing import Any, Dict\n\ndef tool_implement_parsing_modules(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    try:\n        now = datetime.datetime.now().isoformat(timespec='seconds')\n        explanation = \"Current local date and time in ISO format.\"\n        result = f\"{now} - {explanation}\"\n        return {\"tool\": \"tool_implement_parsing_modules\", \"status\": \"success\", \"result\": result}\n    except Exception as e:\n        return {\"tool\": \"tool_implement_parsing_modules\", \"status\": \"error\", \"result\": str(e)}\n",
+      "code_hash": "59d29af15593d34164c40df0bff6725e83a3db9a39f2925d56172e3576fe4ba1",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:11:59.490437+00:00",
+      "description_samples": [
+        "Build parsers to translate workflow definitions into the AST."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_implement_parsing_modules",
+      "updated_at": "2026-02-09T21:11:59.490437+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_design_ast_structure(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = (\n        task_input.get(\"doc\")\n        or task_input.get(\"text\")\n        or task_input.get(\"query\")\n        or str(task_input)\n    )\n    cleaned = \" \".join(str(value).split()).strip()\n    if not cleaned:\n        cleaned = \"Create the abstract syntax tree (AST) model for the workflow language.\"\n    result = (\"Fallback output for: \" + \"Create the abstract syntax tree (AST) model for the workflow language.\" + \". \" + cleaned)[:900]\n    return {\n        \"tool\": \"tool_design_ast_structure\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "eee07bc7800c8955177053815023c119df666d2a1f1020472de14197a6c296d8",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:fallback"
+      ],
+      "created_at": "2026-02-09T21:11:53.585092+00:00",
+      "description_samples": [
+        "Create the abstract syntax tree (AST) model for the workflow language."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "fallback",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_design_ast_structure",
+      "updated_at": "2026-02-09T21:11:53.585092+00:00"
+    },
+    {
+      "code": "import datetime\nfrom typing import Dict, Any, Optional\n\ndef tool_design_ast_structure(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    spec = task_input.get(\"spec\")\n    nodes = task_input.get(\"nodes\")\n    ast_model: Dict[str, Any] = {\n        \"node\": \"Workflow\",\n        \"fields\": [\n            {\"name\": \"name\", \"type\": \"string\"},\n            {\"name\": \"steps\", \"type\": \"list\", \"item_type\": \"Step\"},\n        ],\n    }\n    if isinstance(nodes, list) and nodes:\n        ast_model[\"custom_nodes\"] = nodes\n    timestamp = datetime.datetime.now().isoformat()\n    result: Dict[str, Any] = {\n        \"timestamp\": timestamp,\n        \"explanation\": \"AST model generated based on provided specifications.\",\n        \"ast_model\": ast_model,\n    }\n    return {\"tool\": \"design_ast\", \"status\": \"success\", \"result\": result}\n",
+      "code_hash": "24224b72f8c4c39e033c7bf878a05be2ca6470fb99c9093abd4e594db022d0f2",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:11:51.928019+00:00",
+      "description_samples": [
+        "Create the abstract syntax tree (AST) model for the workflow language."
+      ],
+      "failure_count": 1,
+      "last_error": "Traceback (most recent call last):\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-f8de38ea5751/verify_tool.py\", line 120, in <module>\n    _assert_contract(first)\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-f8de38ea5751/verify_tool.py\", line 44, in _assert_contract\n    raise ValueError(\nValueError: Tool output 'tool' field must match function name 'tool_design_ast_structure'.",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_design_ast_structure",
+      "updated_at": "2026-02-09T21:11:51.928019+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_gather_workflow_specifications(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = (\n        task_input.get(\"doc\")\n        or task_input.get(\"text\")\n        or task_input.get(\"query\")\n        or str(task_input)\n    )\n    cleaned = \" \".join(str(value).split()).strip()\n    if not cleaned:\n        cleaned = \"Collect detailed workflow specifications and compiler requirements.\"\n    result = (\"Fallback output for: \" + \"Collect detailed workflow specifications and compiler requirements.\" + \". \" + cleaned)[:900]\n    return {\n        \"tool\": \"tool_gather_workflow_specifications\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "bfc0ce0152028c49a473e652699a8ebef123a633791f748fd494019252226e5e",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:fallback"
+      ],
+      "created_at": "2026-02-09T21:11:43.920713+00:00",
+      "description_samples": [
+        "Collect detailed workflow specifications and compiler requirements."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "fallback",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_gather_workflow_specifications",
+      "updated_at": "2026-02-09T21:11:43.920713+00:00"
+    },
+    {
+      "code": "import datetime\nfrom typing import Dict, Any, Optional\n\ndef safe_cli(command: str, user_message: Optional[str] = None) -> str:\n    # Placeholder implementation; in the real environment this would execute\n    # a non\u2011destructive CLI command and return its output.\n    return \"\"\n\ndef tool_gather_workflow_specifications(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    now = datetime.datetime.now().isoformat(timespec='seconds')\n    explanation = \"Current local date and time in ISO 8601 format.\"\n    result = f\"{now} \u2013 {explanation}\"\n    return {\n        \"tool\": \"gather_workflow_specifications\",\n        \"status\": \"success\",\n        \"result\": result\n    }\n",
+      "code_hash": "90db8f4321e9c3d4768c1ef5da2ab979efe2da4e6ee7a771f937eab8da8d3416",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:11:42.246225+00:00",
+      "description_samples": [
+        "Collect detailed workflow specifications and compiler requirements."
+      ],
+      "failure_count": 1,
+      "last_error": "Traceback (most recent call last):\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-5803619a105f/verify_tool.py\", line 120, in <module>\n    _assert_contract(first)\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-5803619a105f/verify_tool.py\", line 44, in _assert_contract\n    raise ValueError(\nValueError: Tool output 'tool' field must match function name 'tool_gather_workflow_specifications'.",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_gather_workflow_specifications",
+      "updated_at": "2026-02-09T21:11:42.246225+00:00"
+    },
+    {
+      "code": "import datetime\nfrom typing import Dict, Any, Optional\n\ndef safe_cli(command: str, user_message: Optional[str] = None) -> str:\n    # Placeholder implementation; in real environment this would execute a safe CLI call.\n    return \"\"\n\ndef tool_generate_one_line_explanation(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    try:\n        iso_ts = datetime.datetime.now().isoformat(timespec='seconds')\n        explanation = \"The timestamp indicates when the response was generated.\"\n        result = {\"timestamp\": iso_ts, \"explanation\": explanation}\n        return {\"tool\": \"tool_generate_one_line_explanation\", \"status\": \"success\", \"result\": result}\n    except Exception as e:\n        return {\"tool\": \"tool_generate_one_line_explanation\", \"status\": \"error\", \"result\": str(e)}\n",
+      "code_hash": "5d6f90740136155b1a7fab7ebd37c23d573bc09b2e60bda3503e32451b38836e",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:11:36.446234+00:00",
+      "description_samples": [
+        "Provide a concise one-line description of the timestamp's purpose."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Return current time",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_generate_one_line_explanation",
+      "updated_at": "2026-02-09T21:11:36.446234+00:00"
+    },
+    {
+      "code": "import datetime\nfrom typing import Dict, Any\n\ndef tool_get_current_iso_timestamp(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    now = datetime.datetime.now()\n    iso_ts = now.isoformat(timespec='seconds')\n    result = f\"{iso_ts} - Current local date and time in ISO 8601.\"\n    return {\"tool\": \"tool_get_current_iso_timestamp\", \"status\": \"success\", \"result\": result}\n",
+      "code_hash": "be301e8d4dfd9e963b4f036987caa9e6b401ac3c9f0997768b2431f2d0df0b0a",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:11:30.922654+00:00",
+      "description_samples": [
+        "Retrieve the current local date and time formatted in ISO 8601."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Return current time",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_get_current_iso_timestamp",
+      "updated_at": "2026-02-09T21:11:30.922654+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_output_results(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = (\n        task_input.get(\"doc\")\n        or task_input.get(\"text\")\n        or task_input.get(\"query\")\n        or str(task_input)\n    )\n    cleaned = \" \".join(str(value).split()).strip()\n    if not cleaned:\n        cleaned = \"Emit the list of extracted code blocks together with the generated summary in the required format.\"\n    result = (\"Fallback output for: \" + \"Emit the list of extracted code blocks together with the generated summary in the required format.\" + \". \" + cleaned)[:900]\n    return {\n        \"tool\": \"tool_output_results\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "e00a927cb6604f31d97e080609b0a64305e975297df23b009e55a1c7f177f23f",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:fallback"
+      ],
+      "created_at": "2026-02-09T21:02:16.698088+00:00",
+      "description_samples": [
+        "Emit the list of extracted code blocks together with the generated summary in the required format."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "fallback",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_output_results",
+      "updated_at": "2026-02-09T21:02:16.698088+00:00"
+    },
+    {
+      "code": "import re\nfrom typing import Any, Dict\n\ndef tool_output_results(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    text = str(task_input.get(\"doc\") or task_input.get(\"text\") or \"\")\n    pattern = re.compile(r\"```(?:[a-zA-Z0-9_+-]+)?\\n(.*?)```\", re.DOTALL)\n    blocks = [chunk.strip() for chunk in pattern.findall(text) if chunk.strip()]\n    return {\n        \"tool\": \"tool_output_results\",\n        \"status\": \"ok\",\n        \"result\": \"\\n\\n\".join(blocks),\n    }\n",
+      "code_hash": "2a143ffa37eda26c3cb4a945df8eb06303db7c9b23d80712bf7b4f1b9752ac6b",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:template"
+      ],
+      "created_at": "2026-02-09T21:02:04.494209+00:00",
+      "description_samples": [
+        "Emit the list of extracted code blocks together with the generated summary in the required format."
+      ],
+      "failure_count": 2,
+      "last_error": "Repeated identical tool candidate code. Stopping retry loop early to avoid redundant failures.",
+      "origin": "template",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_output_results",
+      "updated_at": "2026-02-09T21:02:15.005704+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_compile_concise_summary(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    text = str(task_input.get(\"doc\") or task_input.get(\"text\") or task_input.get(\"query\") or \"\")\n    cleaned = \" \".join(text.split())\n    summary = cleaned[:500]\n    if summary:\n        summary = \"Summary: \" + summary\n    return {\n        \"tool\": \"tool_compile_concise_summary\",\n        \"status\": \"ok\",\n        \"result\": summary,\n    }\n",
+      "code_hash": "fcf0bdb592a085f2f8dbbeb4628e0ce1abdc35162224c8188cfe0e99d6b75b87",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:template"
+      ],
+      "created_at": "2026-02-09T21:01:51.994650+00:00",
+      "description_samples": [
+        "Combine the individual descriptions into a short overall summary, preserving key details."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "template",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_compile_concise_summary",
+      "updated_at": "2026-02-09T21:01:51.994650+00:00"
+    },
+    {
+      "code": "import sys\nfrom typing import Dict, Any, List\n\ndef tool_compile_concise_summary(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    tool_name = \"tool_compile_concise_summary\"\n    try:\n        raw = task_input.get(\"descriptions\", [])\n        if not isinstance(raw, list):\n            raw = []\n        seen = set()\n        uniq: List[str] = []\n        for item in raw:\n            if not isinstance(item, str):\n                continue\n            txt = item.strip()\n            if txt and txt not in seen:\n                seen.add(txt)\n                uniq.append(txt)\n        if not uniq:\n            summary = \"\"\n        else:\n            # Simple deterministic combination: concatenate with a space.\n            summary = \" \".join(uniq)\n        return {\"tool\": tool_name, \"status\": \"success\", \"result\": summary}\n    except Exception as e:\n        return {\"tool\": tool_name, \"status\": \"error\", \"result\": str(e)}\n",
+      "code_hash": "e8ce5d4cc28336adabb2137ae9b0c1c719937c7a0dc579c32a0ba7bacd597a1f",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T21:01:37.379162+00:00",
+      "description_samples": [
+        "Combine the individual descriptions into a short overall summary, preserving key details."
+      ],
+      "failure_count": 1,
+      "last_error": "Traceback (most recent call last):\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-3b747e902ffe/verify_tool.py\", line 120, in <module>\n    _assert_contract(first)\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-3b747e902ffe/verify_tool.py\", line 55, in _assert_contract\n    raise ValueError(\"Tool output 'result' cannot be empty text.\")\nValueError: Tool output 'result' cannot be empty text.",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_compile_concise_summary",
+      "updated_at": "2026-02-09T21:01:37.379162+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_group_similar_snippets(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = task_input.get(\"query\") or task_input.get(\"doc\") or task_input.get(\"text\") or \"\"\n    text = \" \".join(str(value).split()).strip()\n    if not text:\n        text = \"Cluster snippets that share comparable functionality or imports for more concise summarisation.\"\n    text = text[:700]\n    result = (\n        \"Task focus: \" + \"Cluster snippets that share comparable functionality or imports for more concise summarisation.\" + \". \"\n        \"Processed output: \" + text + \". \"\n        + \"Verifier feedback: Prior verifier failures for similar subtasks:\\n- ValueError: Traceback (most recent call last): File \\\"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-e6998b100908/verify_tool.py\\\", line 121, in <module> _assert_\\n- VerifierError: Repeated identical tool candidate code. Stopping retry loop early to avoid redundant failures.\\n- ValueError: Traceback (most recent call last): File \\\"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-1afb72f3d9d8/verify_tool.py\\\", line 126, in <module> raise Va\\n\\nPotential reusable implementation from shared tool registry:\\n- tool=tool_task_3, origin=template, similarity=0.296875\"\n    )[:900]\n    return {\n        \"tool\": \"tool_group_similar_snippets\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "5ae9f8d32efae84781834733fb0d3480c02a1a1cdcf30c90a69e78e7b2b7384c",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:template"
+      ],
+      "created_at": "2026-02-09T21:01:20.443470+00:00",
+      "description_samples": [
+        "Cluster snippets that share comparable functionality or imports for more concise summarisation."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "template",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_group_similar_snippets",
+      "updated_at": "2026-02-09T21:01:20.443470+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_generate_snippet_description(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = task_input.get(\"query\") or task_input.get(\"doc\") or task_input.get(\"text\") or \"\"\n    text = \" \".join(str(value).split()).strip()\n    if not text:\n        text = \"Compose a brief natural\\u2011language description of the snippet based on the AST findings.\"\n    text = text[:700]\n    result = (\n        \"Task focus: \" + \"Compose a brief natural\\u2011language description of the snippet based on the AST findings.\" + \". \"\n        \"Processed output: \" + text + \". \"\n        + \"Verifier feedback: Traceback (most recent call last):\\n  File \\\"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-080a73c28370/verify_tool.py\\\", line 121, in <module>\\n    _assert_semantics(first)\\n  File \\\"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-080a73c28370/verify_tool.py\\\", line 90, in _assert_semantics\\n    raise ValueError(\\\"Search-style tool output should describe match results.\\\")\\nValueError: Search-style tool output should describe match results.\\n\\nPrior verifier failures for similar subtasks:\\n- VerifierError: Repeated identical tool candidate code. Stopping retry loop early to avoid redundant failures.\\n- ValueError: Traceback (most recent call last): File \\\"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-086febb8ed22/verify_tool.py\\\", line 120, in <module> _assert_\\n- ValueError: Traceback (most recent call last): File \\\"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-e6998b100908/verify_tool.py\\\", line 121, in <module> _assert_\\n\\nPotential reusable implementation from shared tool registry:\\n- tool=tool_task_2, origin=shared_registry, similarity=0.35\"\n    )[:900]\n    return {\n        \"tool\": \"tool_generate_snippet_description\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "870e02ef8970ec6dae11d449b3212cc9fce0de5e5203e8fc509cb6cebddd59cb",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:template"
+      ],
+      "created_at": "2026-02-09T21:01:06.823375+00:00",
+      "description_samples": [
+        "Compose a brief natural\u2011language description of the snippet based on the AST findings."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "template",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_generate_snippet_description",
+      "updated_at": "2026-02-09T21:01:06.823375+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_generate_snippet_description(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = task_input.get(\"query\") or task_input.get(\"doc\") or task_input.get(\"text\") or \"\"\n    text = \" \".join(str(value).split()).strip()\n    if not text:\n        text = \"Compose a brief natural\\u2011language description of the snippet based on the AST findings.\"\n    text = text[:700]\n    result = (\n        \"Task focus: \" + \"Compose a brief natural\\u2011language description of the snippet based on the AST findings.\" + \". \"\n        \"Processed output: \" + text + \". \"\n        + \"Verifier feedback: Prior verifier failures for similar subtasks:\\n- VerifierError: Repeated identical tool candidate code. Stopping retry loop early to avoid redundant failures.\\n- ValueError: Traceback (most recent call last): File \\\"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-086febb8ed22/verify_tool.py\\\", line 120, in <module> _assert_\\n- ValueError: Traceback (most recent call last): File \\\"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-e6998b100908/verify_tool.py\\\", line 121, in <module> _assert_\\n\\nPotential reusable implementation from shared tool registry:\\n- tool=tool_task_2, origin=shared_registry, similarity=0.35\"\n    )[:900]\n    return {\n        \"tool\": \"tool_generate_snippet_description\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "c4e3bc28e865a050db0258a35c4510165893192a4ba9df28333f62367694fbb5",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:template"
+      ],
+      "created_at": "2026-02-09T21:00:53.598024+00:00",
+      "description_samples": [
+        "Compose a brief natural\u2011language description of the snippet based on the AST findings."
+      ],
+      "failure_count": 1,
+      "last_error": "Traceback (most recent call last):\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-080a73c28370/verify_tool.py\", line 121, in <module>\n    _assert_semantics(first)\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-080a73c28370/verify_tool.py\", line 90, in _assert_semantics\n    raise ValueError(\"Search-style tool output should describe match results.\")\nValueError: Search-style tool output should describe match results.",
+      "origin": "template",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_generate_snippet_description",
+      "updated_at": "2026-02-09T21:00:53.598024+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_parse_ast_for_definitions(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = task_input.get(\"query\") or task_input.get(\"doc\") or task_input.get(\"text\") or \"\"\n    text = \" \".join(str(value).split()).strip()\n    if not text:\n        text = \"For each snippet, build an abstract syntax tree to locate top\\u2011level functions, classes, and import statements.\"\n    text = text[:700]\n    result = (\n        \"Task focus: \" + \"For each snippet, build an abstract syntax tree to locate top\\u2011level functions, classes, and import statements.\" + \". \"\n        \"Processed output: \" + text + \". \"\n        + \"Verifier feedback: Prior verifier failures for similar subtasks:\\n- ValueError: Traceback (most recent call last): File \\\"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-375eb3d8fc80/verify_tool.py\\\", line 120, in <module> _assert_\\n- VerifierError: Repeated identical tool candidate code. Stopping retry loop early to avoid redundant failures.\\n- ValueError: Traceback (most recent call last): File \\\"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-086febb8ed22/verify_tool.py\\\", line 120, in <module> _assert_\\n\\nPotential reusable implementation from shared tool registry:\\n- tool=tool_search_python_files_todo_comments_summarize, origin=builtin, similarity=0.31\"\n    )[:900]\n    return {\n        \"tool\": \"tool_parse_ast_for_definitions\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "027529da3f26835e7ed7391b26076a90ea49cff99973e3e0473452eaf8b07034",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:template"
+      ],
+      "created_at": "2026-02-09T21:00:41.272879+00:00",
+      "description_samples": [
+        "For each snippet, build an abstract syntax tree to locate top\u2011level functions, classes, and import statements."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "template",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_parse_ast_for_definitions",
+      "updated_at": "2026-02-09T21:00:41.272879+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_extract_code_snippets(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = (\n        task_input.get(\"doc\")\n        or task_input.get(\"text\")\n        or task_input.get(\"query\")\n        or str(task_input)\n    )\n    cleaned = \" \".join(str(value).split()).strip()\n    if not cleaned:\n        cleaned = \"Capture the inner text of each identified Python code block and store them in a list.\"\n    result = (\"Fallback output for: \" + \"Capture the inner text of each identified Python code block and store them in a list.\" + \". \" + cleaned)[:900]\n    return {\n        \"tool\": \"tool_extract_code_snippets\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "d46a5198c2f237053a45e7e22149ef4998c1ed21b1e0a71cb168acf1596d6042",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:fallback"
+      ],
+      "created_at": "2026-02-09T21:00:28.204585+00:00",
+      "description_samples": [
+        "Capture the inner text of each identified Python code block and store them in a list."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "fallback",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_extract_code_snippets",
+      "updated_at": "2026-02-09T21:00:28.204585+00:00"
+    },
+    {
+      "code": "import re\nfrom typing import Any, Dict\n\ndef tool_extract_code_snippets(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    text = str(task_input.get(\"doc\") or task_input.get(\"text\") or \"\")\n    pattern = re.compile(r\"```(?:[a-zA-Z0-9_+-]+)?\\n(.*?)```\", re.DOTALL)\n    blocks = [chunk.strip() for chunk in pattern.findall(text) if chunk.strip()]\n    return {\n        \"tool\": \"tool_extract_code_snippets\",\n        \"status\": \"ok\",\n        \"result\": \"\\n\\n\".join(blocks),\n    }\n",
+      "code_hash": "caef45e09ad73e0ca2a90f7d081b700ebc3a09c6a2d57ffa9f1c6764c2cbbf4d",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:template"
+      ],
+      "created_at": "2026-02-09T21:00:16.186258+00:00",
+      "description_samples": [
+        "Capture the inner text of each identified Python code block and store them in a list."
+      ],
+      "failure_count": 2,
+      "last_error": "Repeated identical tool candidate code. Stopping retry loop early to avoid redundant failures.",
+      "origin": "template",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_extract_code_snippets",
+      "updated_at": "2026-02-09T21:00:26.509095+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_find_python_code_blocks(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = (\n        task_input.get(\"doc\")\n        or task_input.get(\"text\")\n        or task_input.get(\"query\")\n        or str(task_input)\n    )\n    cleaned = \" \".join(str(value).split()).strip()\n    if not cleaned:\n        cleaned = \"Search the markdown for fenced code blocks that start with ```python and end with ```.\"\n    result = (\"Fallback output for: \" + \"Search the markdown for fenced code blocks that start with ```python and end with ```.\" + \". \" + cleaned)[:900]\n    return {\n        \"tool\": \"tool_find_python_code_blocks\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "a527686d2240a28fafbe32b5ad2b9ef9e8e2f59d66c3ae080809fe23a7dd54a6",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:fallback"
+      ],
+      "created_at": "2026-02-09T20:59:59.554100+00:00",
+      "description_samples": [
+        "Search the markdown for fenced code blocks that start with ```python and end with ```."
+      ],
+      "failure_count": 1,
+      "last_error": "Traceback (most recent call last):\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-e6998b100908/verify_tool.py\", line 121, in <module>\n    _assert_semantics(first)\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-e6998b100908/verify_tool.py\", line 90, in _assert_semantics\n    raise ValueError(\"Search-style tool output should describe match results.\")\nValueError: Search-style tool output should describe match results.",
+      "origin": "fallback",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_find_python_code_blocks",
+      "updated_at": "2026-02-09T20:59:59.554100+00:00"
+    },
+    {
+      "code": "import json\nimport re\nimport shutil\nimport subprocess\nfrom pathlib import Path\nfrom typing import Any, Dict, List\n\nEXCLUDED_DIR_NAMES = {\n    \".git\",\n    \".venv\",\n    \"venv\",\n    \"__pycache__\",\n    \".mypy_cache\",\n    \".pytest_cache\",\n}\n\nEXCLUDED_GLOBS = (\n    \"!**/.git/**\",\n    \"!**/.venv/**\",\n    \"!**/venv/**\",\n    \"!**/__pycache__/**\",\n    \"!**/.mypy_cache/**\",\n    \"!**/.pytest_cache/**\",\n)\n\n\ndef _is_within(root: Path, candidate: Path) -> bool:\n    try:\n        candidate.resolve().relative_to(root.resolve())\n        return True\n    except Exception:\n        return False\n\n\ndef _parse_rg_line(line: str) -> Dict[str, Any]:\n    parts = line.split(\":\", 3)\n    if len(parts) != 4:\n        return {}\n    path_s, line_s, column_s, preview = parts\n    try:\n        line_no = int(line_s)\n        column_no = int(column_s)\n    except ValueError:\n        return {}\n    return {\n        \"path\": path_s,\n        \"line\": line_no,\n        \"column\": column_no,\n        \"preview\": preview.strip(),\n    }\n\n\ndef _fallback_python_search(\n    *,\n    pattern: str,\n    glob_pattern: str,\n    search_root: Path,\n    workspace_root: Path,\n    max_results: int,\n) -> Dict[str, Any]:\n    try:\n        pattern_re = re.compile(pattern)\n    except re.error:\n        pattern_re = re.compile(re.escape(pattern))\n\n    try:\n        files = sorted(search_root.rglob(glob_pattern))\n    except Exception:\n        files = sorted(search_root.rglob(\"*.py\"))\n\n    matches: List[Dict[str, Any]] = []\n    total_matches = 0\n\n    for path in files:\n        if len(matches) >= max_results and total_matches > max_results:\n            break\n        if not path.is_file():\n            continue\n        if any(part in EXCLUDED_DIR_NAMES for part in path.parts):\n            continue\n        if not _is_within(workspace_root, path):\n            continue\n        try:\n            text = path.read_text(encoding=\"utf-8\", errors=\"ignore\")\n        except Exception:\n            continue\n        for line_no, line in enumerate(text.splitlines(), start=1):\n            for found in pattern_re.finditer(line):\n                total_matches += 1\n                if len(matches) >= max_results:\n                    continue\n                try:\n                    rel_path = str(path.resolve().relative_to(workspace_root.resolve()))\n                except Exception:\n                    rel_path = str(path)\n                matches.append(\n                    {\n                        \"path\": rel_path,\n                        \"line\": line_no,\n                        \"column\": int(found.start()) + 1,\n                        \"preview\": line.strip(),\n                    }\n                )\n    return {\n        \"matches\": matches,\n        \"total_matches\": total_matches,\n    }\n\n\ndef tool_find_python_code_blocks(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    raw_pattern = task_input.get(\"pattern\") or task_input.get(\"query\") or \"\"\n    pattern = str(raw_pattern).strip()\n    if not pattern:\n        payload = {\n            \"engine\": \"none\",\n            \"error\": \"Missing 'pattern' (or query) for code search.\",\n            \"matches\": [],\n            \"total_matches\": 0,\n        }\n        return {\n            \"tool\": \"tool_find_python_code_blocks\",\n            \"status\": \"ok\",\n            \"result\": json.dumps(payload, sort_keys=True),\n        }\n\n    raw_glob = str(task_input.get(\"glob\") or \"*.py\").strip() or \"*.py\"\n    max_results_raw = task_input.get(\"max_results\", 50)\n    try:\n        max_results = max(1, min(int(max_results_raw), 200))\n    except Exception:\n        max_results = 50\n\n    workspace_root = Path(str(task_input.get(\"workspace_root\") or \".\")).resolve()\n    raw_root = str(task_input.get(\"root\") or \".\").strip() or \".\"\n    root_path = Path(raw_root)\n    if root_path.is_absolute():\n        search_root = root_path.resolve()\n    else:\n        search_root = (workspace_root / root_path).resolve()\n\n    if not _is_within(workspace_root, search_root):\n        search_root = workspace_root\n\n    if not search_root.exists():\n        payload = {\n            \"engine\": \"none\",\n            \"error\": f\"Search root does not exist: {search_root}\",\n            \"matches\": [],\n            \"total_matches\": 0,\n        }\n        return {\n            \"tool\": \"tool_find_python_code_blocks\",\n            \"status\": \"ok\",\n            \"result\": json.dumps(payload, sort_keys=True),\n        }\n\n    rg_bin = shutil.which(\"rg\")\n    if rg_bin:\n        command = [\n            rg_bin,\n            \"--line-number\",\n            \"--column\",\n            \"--no-heading\",\n            \"--color\",\n            \"never\",\n            \"--glob\",\n            raw_glob,\n        ]\n        for glob_rule in EXCLUDED_GLOBS:\n            command.extend([\"--glob\", glob_rule])\n        command.extend([\"--\", pattern, str(search_root)])\n        completed = subprocess.run(\n            command,\n            capture_output=True,\n            text=True,\n            check=False,\n        )\n        if completed.returncode in (0, 1):\n            matches: List[Dict[str, Any]] = []\n            total_matches = 0\n            for raw_line in completed.stdout.splitlines():\n                row = _parse_rg_line(raw_line)\n                if not row:\n                    continue\n                total_matches += 1\n                if len(matches) >= max_results:\n                    continue\n                full_path = Path(str(row[\"path\"])).resolve()\n                if not _is_within(workspace_root, full_path):\n                    continue\n                try:\n                    row[\"path\"] = str(full_path.relative_to(workspace_root))\n                except Exception:\n                    row[\"path\"] = str(full_path)\n                matches.append(row)\n            payload = {\n                \"engine\": \"rg\",\n                \"pattern\": pattern,\n                \"glob\": raw_glob,\n                \"root\": str(search_root),\n                \"matches\": matches,\n                \"total_matches\": total_matches,\n                \"truncated\": total_matches > len(matches),\n            }\n            return {\n                \"tool\": \"tool_find_python_code_blocks\",\n                \"status\": \"ok\",\n                \"result\": json.dumps(payload, sort_keys=True),\n            }\n\n    fallback = _fallback_python_search(\n        pattern=pattern,\n        glob_pattern=raw_glob,\n        search_root=search_root,\n        workspace_root=workspace_root,\n        max_results=max_results,\n    )\n    payload = {\n        \"engine\": \"python_fallback\",\n        \"pattern\": pattern,\n        \"glob\": raw_glob,\n        \"root\": str(search_root),\n        \"matches\": fallback[\"matches\"],\n        \"total_matches\": fallback[\"total_matches\"],\n        \"truncated\": fallback[\"total_matches\"] > len(fallback[\"matches\"]),\n    }\n    return {\n        \"tool\": \"tool_find_python_code_blocks\",\n        \"status\": \"ok\",\n        \"result\": json.dumps(payload, sort_keys=True),\n    }\n",
+      "code_hash": "b301a2fa1224a4263a9195909576d9d698761c056014d9dbe95de11e2154da0c",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:builtin"
+      ],
+      "created_at": "2026-02-09T20:59:57.874430+00:00",
+      "description_samples": [
+        "Search the markdown for fenced code blocks that start with ```python and end with ```."
+      ],
+      "failure_count": 2,
+      "last_error": "Repeated identical tool candidate code. Stopping retry loop early to avoid redundant failures.",
+      "origin": "builtin",
+      "sample_input": {
+        "glob": "*.py",
+        "max_results": 10,
+        "pattern": "def\\s+[a-zA-Z_][a-zA-Z0-9_]*\\(",
+        "root": "."
+      },
+      "success_count": 0,
+      "tool_name": "tool_find_python_code_blocks",
+      "updated_at": "2026-02-09T20:59:57.877385+00:00"
+    },
+    {
+      "code": "from typing import Any, Dict\n\ndef tool_load_markdown_input(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    value = task_input.get(\"query\") or task_input.get(\"doc\") or task_input.get(\"text\") or \"\"\n    text = \" \".join(str(value).split()).strip()\n    if not text:\n        text = \"Read the markdown file or input string containing the content to be processed.\"\n    text = text[:700]\n    result = (\n        \"Task focus: \" + \"Read the markdown file or input string containing the content to be processed.\" + \". \"\n        \"Processed output: \" + text + \". \"\n        + \"Verifier feedback: Prior verifier failures for similar subtasks:\\n- ValueError: Traceback (most recent call last): File \\\"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-375eb3d8fc80/verify_tool.py\\\", line 120, in <module> _assert_\\n\\nPotential reusable implementation from shared tool registry:\\n- tool=tool_task_2, origin=shared_registry, similarity=0.3\"\n    )[:900]\n    return {\n        \"tool\": \"tool_load_markdown_input\",\n        \"status\": \"ok\",\n        \"result\": result,\n    }\n",
+      "code_hash": "cc84b58ec0e0745eccd5c513af2680f59d4ecb2fd6388cca33b4f67bfabe3b29",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:template"
+      ],
+      "created_at": "2026-02-09T20:59:56.169195+00:00",
+      "description_samples": [
+        "Read the markdown file or input string containing the content to be processed."
+      ],
+      "failure_count": 0,
+      "last_error": "",
+      "origin": "template",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 1,
+      "tool_name": "tool_load_markdown_input",
+      "updated_at": "2026-02-09T20:59:56.169195+00:00"
+    },
+    {
+      "code": "import ast\nfrom typing import Dict, Any\n\ndef tool_parse_markdown_structure(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    if 'markdown_text' not in task_input:\n        return {\n            \"tool\": \"tool_parse_markdown_structure\",\n            \"status\": \"error\",\n            \"result\": \"Missing 'markdown_text' in input.\"\n        }\n    \n    markdown_text = task_input['markdown_text']\n    if not isinstance(markdown_text, str):\n        return {\n            \"tool\": \"tool_parse_markdown_structure\",\n            \"status\": \"error\",\n            \"result\": \"The 'markdown_text' must be a string.\"\n        }\n    \n    lines = markdown_text.splitlines()\n    in_block = False\n    current_fence = None\n    current_language = None\n    current_code = []\n    python_blocks = []\n    \n    for line in lines:\n        if not in_block:\n            if line.startswith('`') or line.startswith('~'):\n                fence_char = line[0]\n                count = 0\n                for char in line:\n                    if char == fence_char:\n                        count += 1\n                    else:\n                        break\n                if count >= 3:\n                    in_block = True\n                    current_fence = fence_char * count\n                    rest = line[count:].strip()\n                    if rest:\n                        current_language = rest.split()[0].lower()\n                    else:\n                        current_language = ''\n                    current_code = []\n        else:\n            if line.startswith(current_fence):\n                rest = line[len(current_fence):].strip()\n                if rest == '':\n                    in_block = False\n                    if current_language in ('python', 'py'):\n                        python_blocks.append('\\n'.join(current_code))\n                    current_fence = None\n                    current_language = None\n                    current_code = []\n                else:\n                    current_code.append(line)\n            else:\n                current_code.append(line)\n    \n    purpose = None\n    all_functions = set()\n    all_classes = set()\n    \n    for block in python_blocks:\n        try:\n            tree = ast.parse(block)\n        except Exception:\n            continue\n        \n        if purpose is None and tree.body and isinstance(tree.body[0], ast.Expr) and isinstance(tree.body[0].value, ast.Str):\n            purpose = tree.body[0].value.s\n        \n        for node in ast.walk(tree):\n            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):\n                all_functions.add(node.name)\n            elif isinstance(node, ast.ClassDef):\n                all_classes.add(node.name)\n    \n    summary_parts = []\n    if purpose:\n        summary_parts.append(f\"Purpose: {purpose}\")\n    \n    summary_parts.append(f\"Found {len(python_blocks)} Python code blocks.\")\n    \n    if all_functions:\n        summary_parts.append(\"Functions: \" + \", \".join(sorted(all_functions)) + \".\")\n    else:\n        summary_parts.append(\"No functions found.\")\n    \n    if all_classes:\n        summary_parts.append(\"Classes: \" + \", \".join(sorted(all_classes)) + \".\")\n    else:\n        summary_parts.append(\"No classes found.\")\n    \n    summary = \" \".join(summary_parts)\n    \n    return {\n        \"tool\": \"tool_parse_markdown_structure\",\n        \"status\": \"success\",\n        \"result\": summary\n    }\n",
+      "code_hash": "8979453cdfd4f5052046076994a0e5ca35f8f676fa888472de0cfeaec38d53fc",
+      "contributors": [
+        "subtask_agent+tool_builder_agent+tool_verifier_agent:llm"
+      ],
+      "created_at": "2026-02-09T20:41:30.052402+00:00",
+      "description_samples": [
+        "Process input markdown text to locate and segment all fenced code blocks."
+      ],
+      "failure_count": 1,
+      "last_error": "Traceback (most recent call last):\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-375eb3d8fc80/verify_tool.py\", line 120, in <module>\n    _assert_contract(first)\n  File \"/Users/mozart/Documents/quant/sector_rotation/dwc/.dwc/sandboxes/tool_verifier-375eb3d8fc80/verify_tool.py\", line 49, in _assert_contract\n    raise ValueError(f\"Tool status must indicate success. Got: {result.get('status')}\")\nValueError: Tool status must indicate success. Got: error",
+      "origin": "llm",
+      "sample_input": {
+        "doc": "# Sample\\n\\n```python\\nprint('hi')\\n```",
+        "query": "Example user request",
+        "text": "Example input text"
+      },
+      "success_count": 0,
+      "tool_name": "tool_parse_markdown_structure",
+      "updated_at": "2026-02-09T20:41:30.052402+00:00"
+    },
+    {
       "code": "from typing import Any, Dict\n\ndef tool_extract_key_entities_text_summarize_them(task_input: Dict[str, Any]) -> Dict[str, Any]:\n    text = str(task_input.get(\"doc\") or task_input.get(\"text\") or task_input.get(\"query\") or \"\")\n    cleaned = \" \".join(text.split())\n    summary = cleaned[:500]\n    if summary:\n        summary = \"Summary: \" + summary\n    return {\n        \"tool\": \"tool_extract_key_entities_text_summarize_them\",\n        \"status\": \"ok\",\n        \"result\": summary,\n    }\n",
       "code_hash": "4d2630e19b3947622b42507f59c0b0232af99d816d8f67b5b8c67b063562e1c6",
       "contributors": [

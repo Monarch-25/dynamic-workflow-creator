@@ -507,7 +507,11 @@ class WorkflowState(TypedDict, total=False):
 
 
 def _read_document(path: str) -> str:
-    file_path = Path(path)
+    file_path = Path(path).expanduser()
+    if not file_path.is_absolute():
+        file_path = (Path.cwd() / file_path).resolve()
+    else:
+        file_path = file_path.resolve()
     if not file_path.exists():
         raise FileNotFoundError(f"Document not found: {{file_path}}")
     ext = file_path.suffix.lower()
@@ -527,16 +531,37 @@ def _read_document(path: str) -> str:
         import shutil
         import subprocess
 
+        candidates: List[List[str]] = []
+        if shutil.which("antiword"):
+            candidates.append(["antiword", str(file_path)])
+        if shutil.which("catdoc"):
+            candidates.append(["catdoc", str(file_path)])
         textutil_path = shutil.which("textutil")
-        if not textutil_path:
-            raise ValueError("'.doc' needs macOS textutil or conversion to '.docx'.")
-        converted = subprocess.run(
-            [textutil_path, "-convert", "txt", "-stdout", str(file_path)],
-            check=True,
-            capture_output=True,
-            text=True,
+        if textutil_path:
+            candidates.append([textutil_path, "-convert", "txt", "-stdout", str(file_path)])
+
+        errors: List[str] = []
+        for command in candidates:
+            try:
+                converted = subprocess.run(
+                    command,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                output = converted.stdout.strip()
+                if output:
+                    return output
+                errors.append(f"{{command[0]}} returned empty output")
+            except subprocess.CalledProcessError as exc:
+                snippet = (exc.stderr or exc.stdout or "").strip().replace("\\n", " ")
+                errors.append(f"{{command[0]}} failed: {{snippet[:120]}}")
+
+        detail = "; ".join(errors) if errors else "no compatible converter found in PATH"
+        raise ValueError(
+            "Cannot parse '.doc' file. Install antiword/catdoc (Linux) or use macOS textutil, "
+            "or convert the file to '.docx'. Details: " + detail
         )
-        return converted.stdout.strip()
     raise ValueError(
         f"Unsupported document extension '{{ext}}'. Supported: {{SUPPORTED_DOC_EXTENSIONS}}"
     )
@@ -578,14 +603,24 @@ def _build_input_payload(args: argparse.Namespace) -> Dict[str, Any]:
         if isinstance(parsed, dict):
             payload.update(parsed)
     if args.input_file:
-        parsed = json.loads(Path(args.input_file).read_text(encoding="utf-8"))
+        input_file_path = Path(args.input_file).expanduser()
+        if not input_file_path.is_absolute():
+            input_file_path = (Path.cwd() / input_file_path).resolve()
+        else:
+            input_file_path = input_file_path.resolve()
+        parsed = json.loads(input_file_path.read_text(encoding="utf-8"))
         if isinstance(parsed, dict):
             payload.update(parsed)
     if args.query:
         payload["query"] = args.query
     if args.doc:
-        payload["doc_path"] = args.doc
-        payload["doc"] = _read_document(args.doc)
+        doc_path = Path(args.doc).expanduser()
+        if not doc_path.is_absolute():
+            doc_path = (Path.cwd() / doc_path).resolve()
+        else:
+            doc_path = doc_path.resolve()
+        payload["doc_path"] = str(doc_path)
+        payload["doc"] = _read_document(str(doc_path))
 
     if DOC_REQUIRED and not (
         payload.get("doc") or payload.get("document") or payload.get("text")
